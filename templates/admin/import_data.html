@@ -1,39 +1,15 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Import Data</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
-    .top-bar { background-color: #1e5a9f; color: white; padding: 15px 20px; text-align: right; }
-    .top-bar a { color: #ffd700; text-decoration: none; margin-left: 20px; }
-    .header { background: white; padding: 20px; border-bottom: 3px solid #1e5a9f; }
-    .container { max-width: 800px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    h2 { color: #1e5a9f; margin-bottom: 20px; border-bottom: 2px solid #1e5a9f; padding-bottom: 10px; }
-    .message { padding: 15px; margin-bottom: 20px; border-radius: 4px; }
-    .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    form { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
-    label { display: block; margin-bottom: 10px; font-weight: bold; }
-    select, input[type="file"] { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
-    button { background-color: #1e5a9f; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-    button:hover { background-color: #154070; }
-    .note { font-size: 0.9em; color: #666; margin-top: 20px; line-height: 1.5; }
-  </style>
-</head>
-<body>
-  <div class="top-bar">
-    <a href="/admin/dashboard">Dashboard</a> | <a href="/admin/logout">Logout</a>
-  </div>
-  <div class="header"><h1><i class="fas fa-file-import"></i> Bulk Import Data</h1></div>
-  <div class="container">
-    {% if message %}<div class="message success">{{ message }}</div>{% endif %}
-    {% if error %}<div class="message error">{{ error }}</div>{% endif %}
-    <form method="post" enctype="multipart/form-data">
+{% extends 'admin/base.html' %}
+{% block title %}Import Data{% endblock %}
+{% block content %}
+<div class="container">
+  <h3><i class="fas fa-file-import"></i> Bulk Import Data</h3>
+  {% if message %}<div class="success">{{ message }}</div>{% endif %}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="form-section">
+    <form method="post" action="/admin/import_data" enctype="multipart/form-data">
       <label>Select Data Type:</label>
-      <select name="type" required>
+      <select name="type" required style="max-width:400px;">
         <option value="departments">Departments (Format: Name)</option>
         <option value="classes">Classes (Format: Name, Department Name)</option>
         <option value="units">Units (Format: Code, Name)</option>
@@ -42,16 +18,17 @@
       </select>
       <label>Upload CSV File:</label>
       <input type="file" name="file" accept=".csv" required>
-      <button type="submit" name="import">Import Data</button>
+      <button type="submit" name="import" value="1">Import Data</button>
     </form>
-    <div class="note">
-      <p><strong>Instructions:</strong></p>
-      <ul>
-        <li>Save your Excel file as <strong>CSV (Comma delimited)</strong> before uploading.</li>
-        <li>The first row is treated as a header and will be skipped.</li>
-        <li>Ensure referenced data (like Department Name for Classes) exists before importing.</li>
-      </ul>
-    </div>
   </div>
-</body>
-</html>
+
+  <div style="background:#f9f9f9;padding:20px;border-radius:8px;font-size:0.9em;color:#666;">
+    <p><strong>Instructions:</strong></p>
+    <ul style="margin-left:20px;margin-top:8px;line-height:1.8;">
+      <li>Save your Excel file as <strong>CSV (Comma delimited)</strong> before uploading.</li>
+      <li>The first row is treated as a header and will be skipped.</li>
+      <li>Ensure referenced data (like Department Name for Classes) exists before importing.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
