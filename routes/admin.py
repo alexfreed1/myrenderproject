@@ -44,8 +44,9 @@ def dashboard():
     return render_template('admin/dashboard.html')
 
 @admin_bp.route('/welcome')
-@admin_required
 def welcome():
+    if not session.get('admin'):
+        return redirect(url_for('admin.login'))
     return render_template('admin/welcome.html')
 
 # ── Departments ───────────────────────────────────────────────────────────────

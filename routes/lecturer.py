@@ -34,7 +34,12 @@ def login():
         cur.execute("SELECT * FROM trainers WHERE username=%s AND password=%s", (u, p))
         row = cur.fetchone()
         if row:
-            session['trainer'] = dict(row)
+            session['trainer'] = {
+                'id': row['id'],
+                'name': row['name'],
+                'username': row['username'],
+                'department_id': row['department_id']
+            }
             return redirect(url_for('lecturer.select_department'))
         error = "Invalid username or password"
     return render_template('lecturer/login.html', error=error)

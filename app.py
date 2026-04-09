@@ -7,6 +7,8 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True
 
 app.teardown_appcontext(close_db)
 
@@ -21,7 +23,12 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(lecturer_bp, url_prefix='/lecturer')
 app.register_blueprint(student_bp, url_prefix='/student')
 
-if __name__ == '__main__':
-    with app.app_context():
+# Initialize DB on startup (works with gunicorn too)
+with app.app_context():
+    try:
         init_db()
+    except Exception as e:
+        print(f"DB init warning: {e}")
+
+if __name__ == '__main__':
     app.run(debug=False)
