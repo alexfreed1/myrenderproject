@@ -8,30 +8,28 @@ load_dotenv()
 
 def get_connection_url():
     url = os.environ.get('DATABASE_URL', '')
-    # Render uses postgres:// but psycopg2 needs postgresql://
     if url.startswith('postgres://'):
         url = url.replace('postgres://', 'postgresql://', 1)
     return url
 
+def _connect():
+    url = get_connection_url()
+    # Internal Render hostnames don't need SSL
+    if 'render.com' not in url:
+        return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
+    return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor, sslmode='require')
+
 
 def get_db():
     if 'db' not in g:
-        conn = psycopg2.connect(
-            get_connection_url(),
-            cursor_factory=psycopg2.extras.RealDictCursor,
-            sslmode='require'
-        )
+        conn = _connect()
         conn.autocommit = False
         g.db = conn
     else:
         try:
             g.db.cursor().execute("SELECT 1")
         except Exception:
-            conn = psycopg2.connect(
-                get_connection_url(),
-                cursor_factory=psycopg2.extras.RealDictCursor,
-                sslmode='require'
-            )
+            conn = _connect()
             conn.autocommit = False
             g.db = conn
     return g.db
@@ -47,11 +45,7 @@ def close_db(e=None):
 
 
 def init_db():
-    conn = psycopg2.connect(
-        get_connection_url(),
-        cursor_factory=psycopg2.extras.RealDictCursor,
-        sslmode='require'
-    )
+    conn = _connect()
     cur = conn.cursor()
 
     cur.execute("""CREATE TABLE IF NOT EXISTS departments (
