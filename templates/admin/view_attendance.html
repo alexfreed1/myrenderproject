@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>View Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+    .header { background: white; padding: 20px; border-bottom: 3px solid #1e5a9f; display: flex; justify-content: space-between; align-items: center; }
+    .header h2 { margin: 0; color: #1e5a9f; }
+    .header a { color: #1e5a9f; text-decoration: none; font-weight: bold; }
+    .container { max-width: 1200px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    h3 { color: #1e5a9f; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .form-section { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+    select { width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px; display: block; }
+    button { padding: 10px 20px; background-color: #1e5a9f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    button:hover { background-color: #154070; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table th { background-color: #1e5a9f; color: white; padding: 12px; text-align: left; }
+    table td { padding: 12px; border-bottom: 1px solid #ddd; }
+    table tr:hover { background-color: #f9f9f9; }
+    .present { color: #28a745; font-weight: bold; }
+    .absent { color: #dc3545; font-weight: bold; }
+    .btn-download { display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-bottom: 15px; }
+    .btn-download:hover { background-color: #218838; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h2><i class="fas fa-clipboard-list"></i> View Attendance</h2>
+  <a href="/admin/welcome">Back to Dashboard</a>
+</div>
+<div class="container">
+  <div class="form-section">
+    <h3>Filter Attendance</h3>
+    <form method="get">
+      <label>Class:</label>
+      <select name="class_id" required>
+        <option value="">Select Class</option>
+        {% for c in classes %}<option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <label>Unit:</label>
+      <select name="unit_id" required>
+        <option value="">Select Unit</option>
+        {% for u in units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.code }} - {{ u.name }}</option>{% endfor %}
+      </select>
+      <label>Week:</label>
+      <select name="week" required>
+        <option value="">Select Week</option>
+        {% for i in range(1, 53) %}<option value="{{ i }}" {% if week == i %}selected{% endif %}>Week {{ i }}</option>{% endfor %}
+      </select>
+      <label>Lesson:</label>
+      <select name="lesson" required>
+        <option value="">Select Lesson</option>
+        {% for l in ['L1','L2','L3','L4'] %}<option value="{{ l }}" {% if lesson == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select>
+      <button type="submit">View Records</button>
+    </form>
+  </div>
+  {% if class_id and unit_id %}
+  <h3>Attendance Records</h3>
+  <a href="/admin/download_attendance_pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}" class="btn-download" target="_blank">Download PDF</a>
+  {% if not attendance %}
+    <p>No records found for this selection.</p>
+  {% else %}
+  <table>
+    <thead><tr><th>Admission No</th><th>Name</th><th>Status</th><th>Date Recorded</th></tr></thead>
+    <tbody>
+      {% for r in attendance %}
+      <tr>
+        <td>{{ r.admission_number }}</td>
+        <td>{{ r.full_name }}</td>
+        <td>{% if r.status == 'Present' %}<span class="present">Present</span>{% else %}<span class="absent">Absent</span>{% endif %}</td>
+        <td>{{ r.attendance_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% endif %}
+</div>
+</body>
+</html>

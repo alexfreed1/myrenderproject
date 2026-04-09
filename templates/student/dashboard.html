@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #444; }
+    .navbar { background: linear-gradient(135deg, #1e5a9f 0%, #2e75b6 100%); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .navbar a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; background: rgba(255,255,255,0.2); transition: background 0.3s; }
+    .navbar a:hover { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; transition: transform 0.3s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-right: 20px; color: white; }
+    .bg-blue { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .bg-green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .bg-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+    .stat-info h3 { margin: 0; font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-info p { margin: 5px 0 0; font-size: 28px; font-weight: 700; color: #333; }
+    .card { background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); padding: 0; overflow: hidden; margin-bottom: 30px; }
+    .card-header { padding: 25px 30px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+    .card-header h2 { color: #333; font-size: 20px; margin: 0; font-weight: 700; }
+    .card-header .badge { background: #e3f2fd; color: #1e5a9f; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background-color: #f8f9fa; color: #666; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; padding: 18px 25px; text-align: left; border-bottom: 2px solid #eee; }
+    td { padding: 20px 25px; border-bottom: 1px solid #f0f0f0; color: #555; vertical-align: middle; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background-color: #fcfcfc; }
+    .unit-code { font-weight: 700; color: #1e5a9f; background: #eef4fb; padding: 5px 10px; border-radius: 6px; font-size: 13px; display: inline-block; }
+    .unit-name { font-weight: 500; color: #333; }
+    .progress-container { display: flex; align-items: center; gap: 15px; width: 100%; max-width: 200px; }
+    .progress-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+    .progress-text { font-weight: 700; font-size: 13px; min-width: 40px; text-align: right; }
+    .status-high { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+    .status-med { background: linear-gradient(90deg, #f1c40f, #f39c12); }
+    .status-low { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+    .text-high { color: #27ae60; }
+    .text-med { color: #f39c12; }
+    .text-low { color: #c0392b; }
+    .last-update { font-size: 12px; color: #888; display: flex; align-items: center; gap: 5px; }
+    .empty-state { text-align: center; padding: 40px; color: #777; }
+    .empty-state i { font-size: 48px; color: #ddd; margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+<div class="navbar">
+  <div style="display:flex;align-items:center;">
+    <img src="/static/assets/THIKATTILOGO.jpg" alt="Logo" style="height:50px;margin-right:15px;border-radius:50%;border:2px solid white;">
+    <div>
+      <h1 style="margin:0;font-size:18px;line-height:1.2;font-weight:600;">THIKA TECHNICAL TRAINING INSTITUTE</h1>
+      <p style="margin:0;font-size:14px;opacity:0.9;">Student Portal</p>
+    </div>
+  </div>
+  <div>
+    <span style="margin-right:15px;">Welcome, {{ student.full_name }} ({{ student.admission_number }})</span>
+    <a href="/student/logout">Logout</a>
+  </div>
+</div>
+<div class="container">
+  <div class="summary-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-blue"><i class="fas fa-book"></i></div>
+      <div class="stat-info"><h3>Total Units</h3><p>{{ attendance_data | length }}</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info"><h3>Classes Attended</h3><p>{{ total_attended }}</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-purple"><i class="fas fa-chart-pie"></i></div>
+      <div class="stat-info"><h3>Avg. Attendance</h3><p>{{ overall_pct }}%</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h2>Attendance Dashboard</h2>
+      <span class="badge"><i class="fas fa-calendar-alt"></i> {{ current_month }}</span>
+    </div>
+    {% if attendance_data %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Unit Code</th>
+            <th>Unit Name</th>
+            <th style="text-align:center;">Classes Attended</th>
+            <th style="text-align:center;">Total Recorded</th>
+            <th>Attendance %</th>
+            <th>Last Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in attendance_data %}
+          {% set attended = row.attended or 0 %}
+          {% set total = row.total_records or 0 %}
+          {% set pct = ((attended / total) * 100) | round(1) if total > 0 else 0 %}
+          {% set status_class = 'status-low' if pct < 75 else ('status-med' if pct < 90 else 'status-high') %}
+          {% set text_class = 'text-low' if pct < 75 else ('text-med' if pct < 90 else 'text-high') %}
+          <tr>
+            <td><span class="unit-code">{{ row.unit_code }}</span></td>
+            <td class="unit-name">{{ row.unit_name }}</td>
+            <td style="text-align:center;font-weight:bold;">{{ attended }}</td>
+            <td style="text-align:center;color:#888;">{{ total }}</td>
+            <td>
+              <div class="progress-container">
+                <div class="progress-bg"><div class="progress-fill {{ status_class }}" style="width:{{ pct }}%"></div></div>
+                <span class="progress-text {{ text_class }}">{{ pct }}%</span>
+              </div>
+            </td>
+            <td>
+              <div class="last-update">
+                <i class="far fa-clock"></i>
+                {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}-{% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-clipboard-list"></i>
+      <p>No attendance records found for your account yet.</p>
+    </div>
+    {% endif %}
+  </div>
+  <div style="text-align:center;margin-top:20px;">
+    <a href="/" style="color:#1e5a9f;text-decoration:none;">&larr; Back to Home</a>
+  </div>
+</div>
+</body>
+</html>

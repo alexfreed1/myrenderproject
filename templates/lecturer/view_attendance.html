@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>View Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .present { color: green; font-weight: bold; }
+    .absent { color: red; font-weight: bold; }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+    <div class="flex justify-between items-center mb-6 border-b pb-4">
+      <a href="/lecturer/dashboard?class_id={{ class_id }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm font-bold">← Back</a>
+      <span class="text-gray-600 hidden md:inline">Logged in as: {{ trainer.name }}</span>
+      <a href="/lecturer/logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm font-bold">Logout</a>
+    </div>
+    <div class="text-center mb-6">
+      <h1 class="text-xl font-bold uppercase">THIKA TECHNICAL TRAINING INSTITUTE</h1>
+      {% if dept %}<h2 class="text-md font-semibold">{{ dept.name }} DEPARTMENT</h2>{% endif %}
+      <h3 class="text-md font-semibold">UNIT ATTENDANCE REGISTER</h3>
+      {% if cls %}<p class="text-gray-600 mt-2">CLASS: {{ cls.name }}</p>{% endif %}
+    </div>
+    {% if unit %}
+    <div class="mb-6 pb-6 border-b border-gray-300">
+      <h2 class="text-lg font-bold text-gray-800">Attendance Details</h2>
+      <p class="text-gray-600 mt-2">Unit: <strong>{{ unit.code }} - {{ unit.name }}</strong> | Week: <strong>{{ week }}</strong> | Lesson: <strong>{{ lesson }}</strong></p>
+    </div>
+    {% endif %}
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="bg-blue-600 text-white">
+            <th class="px-4 py-2 text-left border">Admission No.</th>
+            <th class="px-4 py-2 text-left border">Student Name</th>
+            <th class="px-4 py-2 text-left border">Status</th>
+            <th class="px-4 py-2 text-left border">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if records %}
+            {% for r in records %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-2 border">{{ r.admission_number }}</td>
+              <td class="px-4 py-2 border">{{ r.full_name }}</td>
+              <td class="px-4 py-2 border">{% if r.status == 'present' %}<span class="present">✓ Present</span>{% else %}<span class="absent">✗ Absent</span>{% endif %}</td>
+              <td class="px-4 py-2 border">{{ r.attendance_date }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No attendance records found for this selection.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div class="flex gap-4 justify-center">
+      <a href="/lecturer/dashboard?class_id={{ class_id }}" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700">← Back to Dashboard</a>
+      <a href="/lecturer/download_attendance_pdf?class_id={{ class_id }}&unit_id={{ unit_id }}&week={{ week }}&lesson={{ lesson }}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Download PDF</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; padding: 30px; margin: 0; }
+    .welcome-banner { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .welcome-banner h1 { color: #1e5a9f; font-size: 24px; margin-bottom: 10px; margin-top: 0; }
+    .welcome-banner p { color: #666; margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="welcome-banner">
+    <h1>Admin Dashboard</h1>
+    <p>Welcome to the Thika Technical Training Institute Attendance Management System.</p>
+  </div>
+</body>
+</html>
