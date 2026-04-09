@@ -349,11 +349,17 @@ def assign_units():
 @admin_required
 def view_attendance():
     db = get_db(); cur = db.cursor()
+    dept_id  = request.args.get('dept_id',  0, type=int)
     class_id = request.args.get('class_id', 0, type=int)
-    unit_id = request.args.get('unit_id', 0, type=int)
-    week = request.args.get('week', 0, type=int)
-    lesson = request.args.get('lesson', '')
-    cur.execute("SELECT * FROM classes ORDER BY name")
+    unit_id  = request.args.get('unit_id',  0, type=int)
+    week     = request.args.get('week',     0, type=int)
+    lesson   = request.args.get('lesson',  '')
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    departments = cur.fetchall()
+    if dept_id:
+        cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (dept_id,))
+    else:
+        cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
     cur.execute("SELECT * FROM units ORDER BY code")
     units = cur.fetchall()
@@ -364,7 +370,10 @@ def view_attendance():
             WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND s.class_id=%s
             ORDER BY s.admission_number""", (unit_id, week, lesson, class_id))
         attendance = cur.fetchall()
-    return render_template('admin/view_attendance.html', classes=classes, units=units, attendance=attendance, class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
+    return render_template('admin/view_attendance.html',
+        departments=departments, classes=classes, units=units,
+        attendance=attendance, dept_id=dept_id,
+        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
 
 # ── Download Attendance PDF ───────────────────────────────────────────────────
 
