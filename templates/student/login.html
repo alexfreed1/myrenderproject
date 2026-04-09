@@ -22,7 +22,7 @@
 </head>
 <body>
   <div class="login-box">
-    <div style="text-align:center;margin-bottom:20px;"><img src="/static/assets/THIKATTILOGO.jpg" alt="Logo" style="height:80px;"></div>
+    <div style="text-align:center;margin-bottom:20px;"><img src="{{ LOGO_URL }}" alt="Logo" style="height:80px;"></div>
     <h2>Student Login</h2>
     {% if registered %}<div class="success">Registration successful! Please login.</div>{% endif %}
     {% if error %}<div class="error">{{ error }}</div>{% endif %}

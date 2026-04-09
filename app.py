@@ -1,6 +1,7 @@
 import os
-from flask import Flask
+from flask import Flask, url_for
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 from db import get_db, close_db, init_db
 
 load_dotenv()
@@ -9,6 +10,9 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True
+
+# Fix URLs behind Render's reverse proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.teardown_appcontext(close_db)
 
@@ -22,6 +26,11 @@ app.register_blueprint(main_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(lecturer_bp, url_prefix='/lecturer')
 app.register_blueprint(student_bp, url_prefix='/student')
+
+# Inject logo URL into every template automatically
+@app.context_processor
+def inject_logo():
+    return {'LOGO_URL': '/static/assets/THIKATTILOGO.jpg'}
 
 # Initialize DB on startup (works with gunicorn too)
 with app.app_context():

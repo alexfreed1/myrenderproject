@@ -21,7 +21,7 @@
 </head>
 <body>
   <div class="register-box">
-    <div style="text-align:center;margin-bottom:20px;"><img src="/static/assets/THIKATTILOGO.jpg" alt="Logo" style="height:80px;"></div>
+    <div style="text-align:center;margin-bottom:20px;"><img src="{{ LOGO_URL }}" alt="Logo" style="height:80px;"></div>
     <h2>Student Registration</h2>
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     <form method="post">
