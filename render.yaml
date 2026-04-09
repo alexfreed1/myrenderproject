@@ -2,10 +2,10 @@ services:
   - type: web
     name: myrenderproject
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -c "from db import init_db; init_db()" && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    buildCommand: pip install -r requirements.txt && python init_db_script.py
+    startCommand: gunicorn app:app
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: SECRET_KEY
-        generateValue: true
+        value: supersecretkey123change
