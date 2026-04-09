@@ -1,5 +1,5 @@
 import os
-from flask import Flask, url_for
+from flask import Flask
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 from db import get_db, close_db, init_db
@@ -29,15 +29,21 @@ app.register_blueprint(student_bp, url_prefix='/student')
 
 # Inject logo URL into every template automatically
 @app.context_processor
-def inject_logo():
+def inject_globals():
     return {'LOGO_URL': '/static/assets/THIKATTILOGO.jpg'}
 
-# Initialize DB on startup (works with gunicorn too)
-with app.app_context():
-    try:
-        init_db()
-    except Exception as e:
-        print(f"DB init warning: {e}")
+# Run DB init once on first request
+_db_initialized = False
+
+@app.before_request
+def setup_db():
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"DB init error: {e}")
 
 if __name__ == '__main__':
     app.run(debug=False)
