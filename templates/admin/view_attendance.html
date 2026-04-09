@@ -9,8 +9,8 @@
     <form method="get" action="/admin/view_attendance" id="filterForm">
 
       <label>Department:</label>
-      <select name="dept_id" id="deptSelect" onchange="this.form.submit()">
-        <option value="">All Departments</option>
+      <select name="dept_id" id="deptSelect" onchange="this.form.submit()" style="max-width:400px;">
+        <option value="">-- All Departments --</option>
         {% for d in departments %}
           <option value="{{ d.id }}" {% if dept_id == d.id %}selected{% endif %}>{{ d.name }}</option>
         {% endfor %}
