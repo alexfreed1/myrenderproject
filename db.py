@@ -6,20 +6,32 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.environ.get('DATABASE_URL', '')
+def get_connection_url():
+    url = os.environ.get('DATABASE_URL', '')
+    # Render uses postgres:// but psycopg2 needs postgresql://
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql://', 1)
+    return url
 
 
 def get_db():
     if 'db' not in g:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        conn = psycopg2.connect(
+            get_connection_url(),
+            cursor_factory=psycopg2.extras.RealDictCursor,
+            sslmode='require'
+        )
         conn.autocommit = False
         g.db = conn
     else:
-        # Reconnect if connection is closed or broken
         try:
             g.db.cursor().execute("SELECT 1")
         except Exception:
-            conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+            conn = psycopg2.connect(
+                get_connection_url(),
+                cursor_factory=psycopg2.extras.RealDictCursor,
+                sslmode='require'
+            )
             conn.autocommit = False
             g.db = conn
     return g.db
@@ -35,7 +47,11 @@ def close_db(e=None):
 
 
 def init_db():
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    conn = psycopg2.connect(
+        get_connection_url(),
+        cursor_factory=psycopg2.extras.RealDictCursor,
+        sslmode='require'
+    )
     cur = conn.cursor()
 
     cur.execute("""CREATE TABLE IF NOT EXISTS departments (
