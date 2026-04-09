@@ -2,6 +2,7 @@ services:
   - type: web
     name: myrenderproject
     env: python
+    pythonVersion: "3.12.9"
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
