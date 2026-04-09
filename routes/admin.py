@@ -56,6 +56,7 @@ def welcome():
 def departments():
     db = get_db(); cur = db.cursor()
     error = None
+    success = None
     if request.method == 'POST' and request.form.get('add_dept'):
         name = request.form.get('name', '').strip()
         if name:
@@ -65,13 +66,16 @@ def departments():
             else:
                 cur.execute("INSERT INTO departments (name) VALUES (%s)", (name,))
                 db.commit()
+                return redirect(url_for('admin.departments'))
+        else:
+            error = "Department name cannot be empty."
     if request.args.get('delete'):
         cur.execute("DELETE FROM departments WHERE id=%s", (int(request.args['delete']),))
         db.commit()
         return redirect(url_for('admin.departments'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts = cur.fetchall()
-    return render_template('admin/departments.html', depts=depts, error=error)
+    return render_template('admin/departments.html', depts=depts, error=error, success=success)
 
 # ── Classes ───────────────────────────────────────────────────────────────────
 

@@ -14,6 +14,14 @@ def get_db():
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
         conn.autocommit = False
         g.db = conn
+    else:
+        # Reconnect if connection is closed or broken
+        try:
+            g.db.cursor().execute("SELECT 1")
+        except Exception:
+            conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+            conn.autocommit = False
+            g.db = conn
     return g.db
 
 
