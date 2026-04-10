@@ -83,6 +83,7 @@
             <th style="text-align:center;">Total</th>
             <th>Attendance %</th>
             <th>Last Update</th>
+            <th>Detail</th>
           </tr>
         </thead>
         <tbody>
@@ -91,7 +92,7 @@
           {% set total = row.total_records or 0 %}
           {% set pct = ((attended / total) * 100) | round(1) if total > 0 else 0 %}
           {% set sc = 'low' if pct < 75 else ('med' if pct < 90 else 'high') %}
-          <tr>
+          <tr style="cursor:pointer;" onclick="window.location='/student/unit_detail?unit_id={{ row.id }}'">
             <td><span class="unit-badge">{{ row.unit_code }}</span></td>
             <td>{{ row.unit_name }}</td>
             <td style="text-align:center;font-weight:700;">{{ attended }}</td>
@@ -105,6 +106,7 @@
             <td style="font-size:12px;color:#888;">
               {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}-{% endif %}
             </td>
+            <td><a href="/student/unit_detail?unit_id={{ row.id }}" class="btn btn-sm" style="background:#1e5a9f;color:#fff;font-size:12px;padding:5px 10px;">View</a></td>
           </tr>
           {% endfor %}
         </tbody>

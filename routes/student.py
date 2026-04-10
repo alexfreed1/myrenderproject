@@ -82,7 +82,7 @@ def dashboard():
     cur.execute("SELECT class_id FROM students WHERE id=%s", (student_id,))
     row = cur.fetchone()
     class_id = row['class_id'] if row else 0
-    cur.execute("""SELECT u.code as unit_code, u.name as unit_name,
+    cur.execute("""SELECT u.id, u.code as unit_code, u.name as unit_name,
         COUNT(a.id) as total_records,
         SUM(CASE WHEN a.status='Present' THEN 1 ELSE 0 END) as attended,
         MAX(a.attendance_date) as last_update
@@ -98,3 +98,60 @@ def dashboard():
     from datetime import datetime
     current_month = datetime.now().strftime('%B %Y')
     return render_template('student/dashboard.html', student=student, attendance_data=attendance_data, total_attended=total_attended, total_records=total_records, overall_pct=overall_pct, current_month=current_month)
+
+
+@student_bp.route('/unit_detail')
+@student_required
+def unit_detail():
+    db = get_db(); cur = db.cursor()
+    student = session['student']
+    student_id = student['id']
+    unit_id = request.args.get('unit_id', 0, type=int)
+    if not unit_id:
+        return redirect(url_for('student.dashboard'))
+    cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+    unit = cur.fetchone()
+    cur.execute("""SELECT s.*, c.name as class_name, d.name as dept_name
+        FROM students s JOIN classes c ON s.class_id=c.id
+        JOIN departments d ON c.department_id=d.id WHERE s.id=%s""", (student_id,))
+    info = cur.fetchone()
+    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date
+        FROM attendance a WHERE a.student_id=%s AND a.unit_id=%s
+        ORDER BY a.week, a.lesson""", (student_id, unit_id))
+    records = cur.fetchall()
+    total = len(records)
+    present = sum(1 for r in records if r['status'] == 'Present')
+    absent = total - present
+    pct = round((present / total) * 100, 1) if total > 0 else 0
+    return render_template('student/unit_detail.html', student=student, unit=unit,
+        info=info, records=records, total=total, present=present, absent=absent, pct=pct)
+
+
+@student_bp.route('/unit_report_pdf')
+@student_required
+def unit_report_pdf():
+    db = get_db(); cur = db.cursor()
+    student = session['student']
+    student_id = student['id']
+    unit_id = request.args.get('unit_id', 0, type=int)
+    if not unit_id:
+        return redirect(url_for('student.dashboard'))
+    cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+    unit = cur.fetchone()
+    cur.execute("""SELECT s.*, c.name as class_name, d.name as dept_name
+        FROM students s JOIN classes c ON s.class_id=c.id
+        JOIN departments d ON c.department_id=d.id WHERE s.id=%s""", (student_id,))
+    info = cur.fetchone()
+    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date
+        FROM attendance a WHERE a.student_id=%s AND a.unit_id=%s
+        ORDER BY a.week, a.lesson""", (student_id, unit_id))
+    records = cur.fetchall()
+    total = len(records)
+    present = sum(1 for r in records if r['status'] == 'Present')
+    absent = total - present
+    pct = round((present / total) * 100, 1) if total > 0 else 0
+    from datetime import datetime
+    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    return render_template('student/unit_report_pdf.html', student=student, unit=unit,
+        info=info, records=records, total=total, present=present,
+        absent=absent, pct=pct, date_gen=date_gen)
