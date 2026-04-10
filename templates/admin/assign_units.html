@@ -7,18 +7,37 @@
 
 <div class="section-card">
   <h3>New Assignment</h3>
-  <form method="post" action="/admin/assign_units" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+  <p style="font-size:13px;color:#888;margin-bottom:12px;">Select a department to filter classes and trainers.</p>
+  <form method="get" action="/admin/assign_units" style="margin-bottom:16px;">
+    <div class="form-group" style="max-width:300px;">
+      <label>Filter by Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">-- All Departments --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  <form method="post" action="/admin/assign_units?filter_dept={{ filter_dept }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
     <div class="form-group" style="margin:0;">
-      <label>Class</label>
-      <select name="class_id" class="form-control" required><option value="">Select</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+      <label>Class <span style="color:red">*</span></label>
+      <select name="class_id" class="form-control" required>
+        <option value="">Select Class</option>
+        {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
     </div>
     <div class="form-group" style="margin:0;">
-      <label>Unit</label>
-      <select name="unit_id" class="form-control" required><option value="">Select</option>{% for u in units %}<option value="{{ u.id }}">{{ u.code }} - {{ u.name }}</option>{% endfor %}</select>
+      <label>Unit <span style="color:red">*</span></label>
+      <select name="unit_id" class="form-control" required>
+        <option value="">Select Unit</option>
+        {% for u in units %}<option value="{{ u.id }}">{{ u.code }} - {{ u.name }}</option>{% endfor %}
+      </select>
     </div>
     <div class="form-group" style="margin:0;">
-      <label>Trainer</label>
-      <select name="trainer_id" class="form-control" required><option value="">Select</option>{% for t in trainers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select>
+      <label>Trainer <span style="color:red">*</span></label>
+      <select name="trainer_id" class="form-control" required>
+        <option value="">Select Trainer</option>
+        {% for t in trainers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+      </select>
     </div>
     <button type="submit" name="assign" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Assign</button>
   </form>
@@ -36,15 +55,28 @@
 </div>
 
 <div class="section-card" style="background:#f0f7ff;">
-  <h3>Filter</h3>
+  <h3>Filter Assignments</h3>
   <form method="get" action="/admin/assign_units" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
-      <label>By Class</label>
-      <select name="filter_class" class="form-control"><option value="">All</option>{% for c in classes %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
     </div>
-    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
-      <label>By Trainer</label>
-      <select name="filter_trainer" class="form-control"><option value="">All</option>{% for t in trainers %}<option value="{{ t.id }}" {% if filter_trainer == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Class</label>
+      <select name="filter_class" class="form-control">
+        <option value="">All</option>
+        {% for c in classes %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Trainer</label>
+      <select name="filter_trainer" class="form-control">
+        <option value="">All</option>
+        {% for t in trainers %}<option value="{{ t.id }}" {% if filter_trainer == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+      </select>
     </div>
     <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
   </form>

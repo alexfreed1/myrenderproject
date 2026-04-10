@@ -7,17 +7,33 @@
 
 <div class="section-card">
   <h3>Add New Student</h3>
-  <form method="post" action="/admin/students" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
-    <div class="form-group" style="margin:0;"><label>Full Name</label><input type="text" name="name" class="form-control" required></div>
-    <div class="form-group" style="margin:0;"><label>Admission Number</label><input type="text" name="admission_number" class="form-control" required></div>
+  <p style="font-size:13px;color:#888;margin-bottom:12px;">Select a department first to filter the class list.</p>
+  <form method="get" action="/admin/students" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+    <div class="form-group" style="margin:0;flex:1;min-width:180px;">
+      <label>Filter by Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">-- All Departments --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+  </form>
+  <form method="post" action="/admin/students?filter_dept={{ filter_dept }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
     <div class="form-group" style="margin:0;">
-      <label>Class</label>
+      <label>Full Name <span style="color:red">*</span></label>
+      <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Admission Number <span style="color:red">*</span></label>
+      <input type="text" name="admission_number" class="form-control" required>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Class <span style="color:red">*</span></label>
       <select name="class_id" class="form-control" required>
         <option value="">Select Class</option>
         {% for c in classes_list %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
       </select>
     </div>
-    <button type="submit" name="add_student" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Add</button>
+    <button type="submit" name="add_student" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Add Student</button>
   </form>
 </div>
 
@@ -35,15 +51,22 @@
 <div class="section-card" style="background:#f0f7ff;">
   <h3>Filter Students</h3>
   <form method="get" action="/admin/students" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
-      <label>By Class</label>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Department</label>
+      <select name="filter_dept" class="form-control" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for d in depts_list %}<option value="{{ d.id }}" {% if filter_dept == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Class</label>
       <select name="filter_class" class="form-control">
         <option value="">All Classes</option>
         {% for c in classes_list %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
     </div>
-    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
-      <label>By Admission No</label>
+    <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+      <label>Admission No</label>
       <input type="text" name="filter_adm" class="form-control" value="{{ filter_adm }}" placeholder="Search...">
     </div>
     <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>

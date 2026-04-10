@@ -7,16 +7,23 @@
 
 <div class="section-card">
   <h3>Add New Unit</h3>
-  <form method="post" action="/admin/units" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-    <div class="form-group" style="margin:0;flex:1;min-width:140px;">
-      <label>Unit Code</label>
+  <form method="post" action="/admin/units" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;">
+    <div class="form-group" style="margin:0;">
+      <label>Department</label>
+      <select name="department_id" class="form-control">
+        <option value="">-- Select Department --</option>
+        {% for d in depts_list %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Unit Code <span style="color:red">*</span></label>
       <input type="text" name="code" class="form-control" required placeholder="e.g. EE101">
     </div>
-    <div class="form-group" style="margin:0;flex:2;min-width:200px;">
-      <label>Unit Name</label>
+    <div class="form-group" style="margin:0;">
+      <label>Unit Name <span style="color:red">*</span></label>
       <input type="text" name="name" class="form-control" required placeholder="e.g. Circuit Theory">
     </div>
-    <button type="submit" name="add_unit" value="1" class="btn btn-primary"><i class="fas fa-plus"></i> Add</button>
+    <button type="submit" name="add_unit" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Add Unit</button>
   </form>
 </div>
 

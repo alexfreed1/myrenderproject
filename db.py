@@ -72,7 +72,8 @@ def init_db():
     cur.execute("""CREATE TABLE IF NOT EXISTS units (
         id SERIAL PRIMARY KEY,
         code VARCHAR(50) NOT NULL UNIQUE,
-        name VARCHAR(200) NOT NULL
+        name VARCHAR(200) NOT NULL,
+        department_id INT REFERENCES departments(id) ON DELETE SET NULL
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS trainers (

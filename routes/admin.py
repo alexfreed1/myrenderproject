@@ -89,12 +89,15 @@ def classes():
             name = request.form.get('name', '').strip()
             dept_id = request.form.get('department_id', 0, type=int)
             if name and dept_id:
-                cur.execute("SELECT id FROM classes WHERE name=%s", (name,))
+                cur.execute("SELECT id FROM classes WHERE name=%s AND department_id=%s", (name, dept_id))
                 if cur.fetchone():
-                    error = "Class already exists."
+                    error = "Class already exists in this department."
                 else:
                     cur.execute("INSERT INTO classes (name, department_id) VALUES (%s,%s)", (name, dept_id))
                     db.commit()
+                    return redirect(url_for('admin.classes'))
+            else:
+                error = "Please fill in all fields."
         elif request.form.get('import_csv'):
             f = request.files.get('csv_file')
             if f:
@@ -107,7 +110,7 @@ def classes():
                         cur.execute("SELECT id FROM departments WHERE name=%s", (dname,))
                         dept = cur.fetchone()
                         if dept:
-                            cur.execute("SELECT id FROM classes WHERE name=%s", (cname,))
+                            cur.execute("SELECT id FROM classes WHERE name=%s AND department_id=%s", (cname, dept['id']))
                             if not cur.fetchone():
                                 cur.execute("INSERT INTO classes (name, department_id) VALUES (%s,%s)", (cname, dept['id']))
                                 count += 1
@@ -138,13 +141,17 @@ def units():
         if request.form.get('add_unit'):
             code = request.form.get('code', '').strip()
             name = request.form.get('name', '').strip()
+            dept_id = request.form.get('department_id', 0, type=int)
             if code and name:
                 cur.execute("SELECT id FROM units WHERE code=%s", (code,))
                 if cur.fetchone():
                     error = "Unit code already exists."
                 else:
-                    cur.execute("INSERT INTO units (code, name) VALUES (%s,%s)", (code, name))
+                    cur.execute("INSERT INTO units (code, name, department_id) VALUES (%s,%s,%s)", (code, name, dept_id or None))
                     db.commit()
+                    return redirect(url_for('admin.units'))
+            else:
+                error = "Code and Name are required."
         elif request.form.get('import_csv'):
             f = request.files.get('csv_file')
             if f:
@@ -165,9 +172,12 @@ def units():
         cur.execute("DELETE FROM units WHERE id=%s", (int(request.args['delete']),))
         db.commit()
         return redirect(url_for('admin.units'))
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    depts_list = cur.fetchall()
+    filter_dept = request.args.get('filter_dept', 0, type=int)
     cur.execute("SELECT * FROM units ORDER BY code")
     units_list = cur.fetchall()
-    return render_template('admin/units.html', units_list=units_list, error=error, success=success)
+    return render_template('admin/units.html', units_list=units_list, depts_list=depts_list, filter_dept=filter_dept, error=error, success=success)
 
 # ── Trainers ──────────────────────────────────────────────────────────────────
 
@@ -236,6 +246,9 @@ def students():
                 else:
                     cur.execute("INSERT INTO students (full_name, admission_number, class_id, password) VALUES (%s,%s,%s,'123456')", (name, adm, class_id))
                     db.commit()
+                    return redirect(url_for('admin.students'))
+            else:
+                error = "All fields are required."
         elif request.form.get('import_csv'):
             f = request.files.get('csv_file')
             if f:
@@ -265,12 +278,20 @@ def students():
         cur.execute("DELETE FROM students WHERE id=%s", (int(request.args['delete']),))
         db.commit()
         return redirect(url_for('admin.students'))
-    cur.execute("SELECT * FROM classes ORDER BY name")
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    depts_list = cur.fetchall()
+    filter_dept = request.args.get('filter_dept', 0, type=int)
+    # Classes filtered by dept for the add form
+    if filter_dept:
+        cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (filter_dept,))
+    else:
+        cur.execute("SELECT * FROM classes ORDER BY name")
     classes_list = cur.fetchall()
     filter_class = request.args.get('filter_class', 0, type=int)
     filter_adm = request.args.get('filter_adm', '').strip()
-    conditions = []
-    params = []
+    conditions = []; params = []
+    if filter_dept:
+        conditions.append("c.department_id=%s"); params.append(filter_dept)
     if filter_class:
         conditions.append("s.class_id=%s"); params.append(filter_class)
     if filter_adm:
@@ -278,7 +299,7 @@ def students():
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     cur.execute(f"SELECT s.*, c.name as class_name FROM students s LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.admission_number", params)
     students_list = cur.fetchall()
-    return render_template('admin/students.html', students_list=students_list, classes_list=classes_list, filter_class=filter_class, filter_adm=filter_adm, error=error, success=success)
+    return render_template('admin/students.html', students_list=students_list, classes_list=classes_list, depts_list=depts_list, filter_dept=filter_dept, filter_class=filter_class, filter_adm=filter_adm, error=error, success=success)
 
 # ── Assign Units ──────────────────────────────────────────────────────────────
 
@@ -299,6 +320,7 @@ def assign_units():
                 else:
                     cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id) VALUES (%s,%s,%s)", (class_id, unit_id, trainer_id))
                     db.commit()
+                    return redirect(url_for('admin.assign_units'))
             else:
                 error = "Please select Class, Unit, and Trainer."
         elif request.form.get('import_csv'):
@@ -325,15 +347,26 @@ def assign_units():
         cur.execute("DELETE FROM class_units WHERE id=%s", (int(request.args['delete']),))
         db.commit()
         return redirect(url_for('admin.assign_units'))
-    cur.execute("SELECT * FROM classes ORDER BY name")
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    depts_list = cur.fetchall()
+    filter_dept = request.args.get('filter_dept', 0, type=int)
+    if filter_dept:
+        cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (filter_dept,))
+    else:
+        cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
     cur.execute("SELECT * FROM units ORDER BY code")
     units = cur.fetchall()
-    cur.execute("SELECT * FROM trainers ORDER BY name")
+    if filter_dept:
+        cur.execute("SELECT * FROM trainers WHERE department_id=%s ORDER BY name", (filter_dept,))
+    else:
+        cur.execute("SELECT * FROM trainers ORDER BY name")
     trainers = cur.fetchall()
     filter_class = request.args.get('filter_class', 0, type=int)
     filter_trainer = request.args.get('filter_trainer', 0, type=int)
     conditions = []; params = []
+    if filter_dept:
+        conditions.append("c.department_id=%s"); params.append(filter_dept)
     if filter_class:
         conditions.append("cu.class_id=%s"); params.append(filter_class)
     if filter_trainer:
@@ -341,7 +374,7 @@ def assign_units():
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     cur.execute(f"SELECT cu.id, c.name as class_name, u.code, u.name as unit_name, t.name as trainer_name FROM class_units cu JOIN classes c ON cu.class_id=c.id JOIN units u ON cu.unit_id=u.id JOIN trainers t ON cu.trainer_id=t.id {where} ORDER BY c.name, u.code", params)
     assignments = cur.fetchall()
-    return render_template('admin/assign_units.html', classes=classes, units=units, trainers=trainers, assignments=assignments, filter_class=filter_class, filter_trainer=filter_trainer, error=error, success=success)
+    return render_template('admin/assign_units.html', depts_list=depts_list, classes=classes, units=units, trainers=trainers, assignments=assignments, filter_dept=filter_dept, filter_class=filter_class, filter_trainer=filter_trainer, error=error, success=success)
 
 # ── View Attendance ───────────────────────────────────────────────────────────
 
