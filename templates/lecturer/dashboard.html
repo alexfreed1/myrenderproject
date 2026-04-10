@@ -23,7 +23,10 @@
     <div class="flex justify-between items-center mb-6 border-b pb-4">
       <a href="/lecturer/select_department" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm font-bold">← Change Dept</a>
       <span class="text-gray-600 hidden md:inline">Logged in as: {{ trainer.name }}</span>
-      <a href="/lecturer/logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm font-bold">Logout</a>
+      <div class="flex gap-2">
+        <a href="/lecturer/trainee_search" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm font-bold"><i class="fas fa-search"></i> Search Trainee</a>
+        <a href="/lecturer/logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm font-bold">Logout</a>
+      </div>
     </div>
     <div class="text-center mb-6">
       <img src="{{ LOGO_URL }}" alt="Logo" class="h-24 mx-auto mb-4">

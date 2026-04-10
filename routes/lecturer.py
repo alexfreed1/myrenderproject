@@ -261,7 +261,93 @@ def delete_lesson_attendance():
         db.commit()
     return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
 
-# ── Download Attendance PDF ───────────────────────────────────────────────────
+# ── Trainee Attendance Search ─────────────────────────────────────────────────
+
+@lecturer_bp.route('/trainee_search')
+@dept_required
+def trainee_search():
+    db = get_db(); cur = db.cursor()
+    trainer = session['trainer']
+    dept_id = session['selected_department']
+    query = request.args.get('q', '').strip()
+    unit_id = request.args.get('unit_id', 0, type=int)
+    students = []
+    student = None
+    records = []
+    summary = []
+
+    # Get units this trainer teaches
+    cur.execute("""SELECT DISTINCT u.id, u.code, u.name FROM class_units cu
+        JOIN units u ON cu.unit_id=u.id
+        JOIN classes c ON cu.class_id=c.id
+        WHERE cu.trainer_id=%s AND c.department_id=%s
+        ORDER BY u.code""", (trainer['id'], dept_id))
+    units_list = cur.fetchall()
+
+    if query:
+        cur.execute("""SELECT s.* FROM students s
+            JOIN classes c ON s.class_id=c.id
+            WHERE c.department_id=%s AND (s.admission_number ILIKE %s OR s.full_name ILIKE %s)
+            ORDER BY s.full_name""", (dept_id, f'%{query}%', f'%{query}%'))
+        students = cur.fetchall()
+
+    student_id = request.args.get('student_id', 0, type=int)
+    if student_id and unit_id:
+        cur.execute("SELECT * FROM students WHERE id=%s", (student_id,))
+        student = cur.fetchone()
+        cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+        selected_unit = cur.fetchone()
+        cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date
+            FROM attendance a
+            WHERE a.student_id=%s AND a.unit_id=%s AND a.trainer_id=%s
+            ORDER BY a.week, a.lesson""", (student_id, unit_id, trainer['id']))
+        records = cur.fetchall()
+        total = len(records)
+        present = sum(1 for r in records if r['status'] == 'Present')
+        absent = total - present
+        pct = round((present / total) * 100, 1) if total > 0 else 0
+        summary = {'total': total, 'present': present, 'absent': absent, 'pct': pct, 'unit': selected_unit}
+
+    return render_template('lecturer/trainee_search.html',
+        trainer=trainer, units_list=units_list, query=query,
+        students=students, student=student, student_id=student_id,
+        unit_id=unit_id, records=records, summary=summary)
+
+
+# ── Trainee Attendance PDF ────────────────────────────────────────────────────
+
+@lecturer_bp.route('/trainee_report_pdf')
+@dept_required
+def trainee_report_pdf():
+    db = get_db(); cur = db.cursor()
+    trainer = session['trainer']
+    student_id = request.args.get('student_id', 0, type=int)
+    unit_id = request.args.get('unit_id', 0, type=int)
+    if not (student_id and unit_id):
+        return 'Missing parameters.', 400
+    cur.execute("SELECT * FROM students WHERE id=%s", (student_id,))
+    student = cur.fetchone()
+    cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+    unit = cur.fetchone()
+    cur.execute("""SELECT c.name as class_name, d.name as dept_name
+        FROM students s JOIN classes c ON s.class_id=c.id
+        JOIN departments d ON c.department_id=d.id WHERE s.id=%s""", (student_id,))
+    info = cur.fetchone()
+    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date
+        FROM attendance a
+        WHERE a.student_id=%s AND a.unit_id=%s AND a.trainer_id=%s
+        ORDER BY a.week, a.lesson""", (student_id, unit_id, trainer['id']))
+    records = cur.fetchall()
+    total = len(records)
+    present = sum(1 for r in records if r['status'] == 'Present')
+    absent = total - present
+    pct = round((present / total) * 100, 1) if total > 0 else 0
+    from datetime import datetime
+    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    return render_template('lecturer/trainee_report_pdf.html',
+        trainer=trainer, student=student, unit=unit, info=info,
+        records=records, total=total, present=present, absent=absent,
+        pct=pct, date_gen=date_gen)
 
 @lecturer_bp.route('/download_attendance_pdf')
 @dept_required
