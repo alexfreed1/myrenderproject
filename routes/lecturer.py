@@ -153,6 +153,8 @@ def view_attendance():
     lesson = request.args.get('lesson', '')
     cls = unit = dept = None
     records = []
+    # Fetch all students in class to show unmarked ones too
+    all_students = []
     if class_id and unit_id and week and lesson:
         cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
         cls = cur.fetchone()
@@ -165,7 +167,99 @@ def view_attendance():
         records = cur.fetchall()
         if cls:
             dept = {'name': cls['dept_name']}
-    return render_template('lecturer/view_attendance.html', trainer=trainer, cls=cls, unit=unit, dept=dept, records=records, class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
+        # Students not yet marked
+        marked_ids = [r['student_id'] for r in records]
+        cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number", (class_id,))
+        all_students = [s for s in cur.fetchall() if s['id'] not in marked_ids]
+    return render_template('lecturer/view_attendance.html', trainer=trainer, cls=cls, unit=unit,
+        dept=dept, records=records, all_students=all_students,
+        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
+
+
+# ── Update single attendance record ──────────────────────────────────────────
+
+@lecturer_bp.route('/update_attendance', methods=['POST'])
+@trainer_required
+def update_attendance():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    att_id = request.form.get('att_id', 0, type=int)
+    new_status = request.form.get('status', '')
+    class_id = request.form.get('class_id', 0)
+    unit_id = request.form.get('unit_id', 0)
+    week = request.form.get('week', 0)
+    lesson = request.form.get('lesson', '')
+    if att_id and new_status in ('Present', 'Absent'):
+        cur.execute("UPDATE attendance SET status=%s, attendance_date=NOW() WHERE id=%s AND trainer_id=%s",
+                    (new_status, att_id, trainer_id))
+        db.commit()
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+
+
+# ── Add missed student attendance ─────────────────────────────────────────────
+
+@lecturer_bp.route('/add_attendance', methods=['POST'])
+@trainer_required
+def add_attendance():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    student_id = request.form.get('student_id', 0, type=int)
+    unit_id = request.form.get('unit_id', 0, type=int)
+    week = request.form.get('week', 0, type=int)
+    lesson = request.form.get('lesson', '')
+    status = request.form.get('status', 'Present')
+    class_id = request.form.get('class_id', 0)
+    if student_id and unit_id and week and lesson and status in ('Present', 'Absent'):
+        cur.execute("SELECT code FROM units WHERE id=%s", (unit_id,))
+        u = cur.fetchone()
+        unit_code = u['code'] if u else ''
+        cur.execute("SELECT id FROM attendance WHERE student_id=%s AND unit_id=%s AND week=%s AND lesson=%s",
+                    (student_id, unit_id, week, lesson))
+        existing = cur.fetchone()
+        if existing:
+            cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s",
+                        (status, trainer_id, existing['id']))
+        else:
+            cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, status, attendance_date)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())""", (student_id, unit_id, unit_code, trainer_id, week, lesson, status))
+        db.commit()
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+
+
+# ── Delete single attendance record ──────────────────────────────────────────
+
+@lecturer_bp.route('/delete_attendance', methods=['POST'])
+@trainer_required
+def delete_attendance():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    att_id = request.form.get('att_id', 0, type=int)
+    class_id = request.form.get('class_id', 0)
+    unit_id = request.form.get('unit_id', 0)
+    week = request.form.get('week', 0)
+    lesson = request.form.get('lesson', '')
+    if att_id:
+        cur.execute("DELETE FROM attendance WHERE id=%s AND trainer_id=%s", (att_id, trainer_id))
+        db.commit()
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+
+
+# ── Delete entire lesson attendance ──────────────────────────────────────────
+
+@lecturer_bp.route('/delete_lesson_attendance', methods=['POST'])
+@trainer_required
+def delete_lesson_attendance():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    unit_id = request.form.get('unit_id', 0, type=int)
+    week = request.form.get('week', 0, type=int)
+    lesson = request.form.get('lesson', '')
+    class_id = request.form.get('class_id', 0)
+    if unit_id and week and lesson:
+        cur.execute("""DELETE FROM attendance WHERE unit_id=%s AND week=%s AND lesson=%s AND trainer_id=%s""",
+                    (unit_id, week, lesson, trainer_id))
+        db.commit()
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
 
 # ── Download Attendance PDF ───────────────────────────────────────────────────
 
