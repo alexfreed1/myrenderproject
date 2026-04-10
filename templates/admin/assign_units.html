@@ -1,69 +1,73 @@
 {% extends 'admin/base.html' %}
 {% block title %}Assign Units{% endblock %}
 {% block content %}
-<div class="container">
-  <h3><i class="fas fa-book-open"></i> Assign Units to Classes &amp; Trainers</h3>
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  {% if success %}<div class="success">{{ success }}</div>{% endif %}
+<h1 class="page-title"><i class="fas fa-link"></i> Assign Units</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
 
-  <div class="form-section">
-    <h3>New Assignment</h3>
-    <form method="post" action="/admin/assign_units">
-      <label>Class:</label>
-      <select name="class_id" required><option value="">Select Class</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
-      <label>Unit:</label>
-      <select name="unit_id" required><option value="">Select Unit</option>{% for u in units %}<option value="{{ u.id }}">{{ u.code }} - {{ u.name }}</option>{% endfor %}</select>
-      <label>Trainer:</label>
-      <select name="trainer_id" required><option value="">Select Trainer</option>{% for t in trainers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select>
-      <button type="submit" name="assign" value="1">Assign Unit</button>
-    </form>
-  </div>
+<div class="section-card">
+  <h3>New Assignment</h3>
+  <form method="post" action="/admin/assign_units" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+    <div class="form-group" style="margin:0;">
+      <label>Class</label>
+      <select name="class_id" class="form-control" required><option value="">Select</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Unit</label>
+      <select name="unit_id" class="form-control" required><option value="">Select</option>{% for u in units %}<option value="{{ u.id }}">{{ u.code }} - {{ u.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Trainer</label>
+      <select name="trainer_id" class="form-control" required><option value="">Select</option>{% for t in trainers %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select>
+    </div>
+    <button type="submit" name="assign" value="1" class="btn btn-primary" style="height:40px;"><i class="fas fa-plus"></i> Assign</button>
+  </form>
+</div>
 
-  <div class="form-section">
-    <h3>Import Assignments (CSV)</h3>
-    <form method="post" action="/admin/assign_units" enctype="multipart/form-data">
-      <p style="margin-bottom:10px;color:#666;"><strong>Format:</strong> Class Name, Unit Code, Trainer Username</p>
-      <input type="file" name="csv_file" required accept=".csv">
-      <button type="submit" name="import_csv" value="1">Import CSV</button>
-    </form>
-  </div>
+<div class="section-card">
+  <h3>Import Assignments (CSV)</h3>
+  <form method="post" action="/admin/assign_units" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label style="color:#666;font-weight:400;">Format: Class Name, Unit Code, Trainer Username</label>
+      <input type="file" name="csv_file" class="form-control" required accept=".csv">
+    </div>
+    <button type="submit" name="import_csv" value="1" class="btn btn-primary"><i class="fas fa-upload"></i> Import</button>
+  </form>
+</div>
 
-  <div class="form-section" style="background-color:#e3f2fd;">
-    <h3>Filter Assignments</h3>
-    <form method="get" action="/admin/assign_units" style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
-      <div>
-        <label>By Class:</label>
-        <select name="filter_class" style="width:200px;padding:8px;border:1px solid #ddd;border-radius:4px;margin-bottom:0;">
-          <option value="">All Classes</option>
-          {% for c in classes %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-        </select>
-      </div>
-      <div>
-        <label>By Trainer:</label>
-        <select name="filter_trainer" style="width:200px;padding:8px;border:1px solid #ddd;border-radius:4px;margin-bottom:0;">
-          <option value="">All Trainers</option>
-          {% for t in trainers %}<option value="{{ t.id }}" {% if filter_trainer == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
-        </select>
-      </div>
-      <button type="submit">Filter</button>
-    </form>
-  </div>
+<div class="section-card" style="background:#f0f7ff;">
+  <h3>Filter</h3>
+  <form method="get" action="/admin/assign_units" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+      <label>By Class</label>
+      <select name="filter_class" class="form-control"><option value="">All</option>{% for c in classes %}<option value="{{ c.id }}" {% if filter_class == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+      <label>By Trainer</label>
+      <select name="filter_trainer" class="form-control"><option value="">All</option>{% for t in trainers %}<option value="{{ t.id }}" {% if filter_trainer == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+  </form>
+</div>
 
+<div class="section-card">
   <h3>Current Assignments</h3>
-  <table>
-    <thead><tr><th>Class</th><th>Unit</th><th>Trainer</th><th>Action</th></tr></thead>
-    <tbody>
-      {% for row in assignments %}
-      <tr>
-        <td>{{ row.class_name }}</td>
-        <td>{{ row.code }} - {{ row.unit_name }}</td>
-        <td>{{ row.trainer_name }}</td>
-        <td><a href="/admin/assign_units?delete={{ row.id }}" class="delete-link" onclick="return confirm('Remove?')">Remove</a></td>
-      </tr>
-      {% else %}
-      <tr><td colspan="4" style="text-align:center;color:#888;">No assignments yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Class</th><th>Unit</th><th>Trainer</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for row in assignments %}
+        <tr>
+          <td>{{ row.class_name }}</td>
+          <td>{{ row.code }} - {{ row.unit_name }}</td>
+          <td>{{ row.trainer_name }}</td>
+          <td><a href="/admin/assign_units?delete={{ row.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Remove?')"><i class="fas fa-trash"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;color:#888;padding:20px;">No assignments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

@@ -1,44 +1,48 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attendance System - Thika Technical Training Institute</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thika TTI - Attendance System</title>
+  <link rel="stylesheet" href="/static/css/base.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #1e5a9f 0%, #2e75b6 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .container { background: white; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); width: 100%; max-width: 600px; overflow: hidden; }
-    .header { background: linear-gradient(135deg, #1e5a9f 0%, #2e75b6 100%); color: white; padding: 40px 20px; text-align: center; }
-    .header h1 { font-size: 28px; margin-bottom: 10px; }
-    .header p { font-size: 16px; opacity: 0.9; }
-    .content { padding: 40px 20px; }
-    .content h2 { color: #1e5a9f; margin-bottom: 30px; text-align: center; font-size: 24px; }
-    .buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-    .btn { padding: 16px 20px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
-    .btn-admin { background-color: #2196F3; color: white; }
-    .btn-lecturer { background-color: #9c27b0; color: white; }
-    .btn-student { background-color: #ff9800; color: white; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .footer { background-color: #f5f5f5; padding: 20px; text-align: center; color: #666; font-size: 14px; }
+    .home-page { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1e5a9f 0%,#2e75b6 100%); padding:20px; }
+    .home-card { background:#fff; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,0.2); width:100%; max-width:560px; overflow:hidden; }
+    .home-header { background:linear-gradient(135deg,#1e5a9f 0%,#2e75b6 100%); color:#fff; padding:36px 24px; text-align:center; }
+    .home-header img { height:70px; margin:0 auto 14px; border-radius:50%; border:3px solid rgba(255,255,255,0.5); }
+    .home-header h1 { font-size:clamp(16px,4vw,22px); margin-bottom:6px; }
+    .home-header p { opacity:0.88; font-size:14px; }
+    .home-body { padding:32px 24px; }
+    .home-body h2 { color:#1e5a9f; text-align:center; margin-bottom:24px; font-size:18px; }
+    .role-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; }
+    .role-btn { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 16px; border-radius:10px; font-size:15px; font-weight:700; text-decoration:none; transition:transform 0.15s, box-shadow 0.15s; }
+    .role-btn:hover { transform:translateY(-3px); box-shadow:0 6px 18px rgba(0,0,0,0.18); text-decoration:none; }
+    .role-btn i { font-size:28px; }
+    .role-admin { background:#2196F3; color:#fff; }
+    .role-trainer { background:#9c27b0; color:#fff; }
+    .role-student { background:#ff9800; color:#fff; }
+    .home-footer { background:#f5f5f5; padding:14px; text-align:center; color:#888; font-size:13px; }
   </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <img src="{{ LOGO_URL }}" alt="THIKA TTI Logo" style="height:60px;margin-bottom:15px;">
+<div class="home-page">
+  <div class="home-card">
+    <div class="home-header">
+      <img src="{{ LOGO_URL }}" alt="Logo">
       <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
       <p>Unit Attendance Management System</p>
     </div>
-    <div class="content">
+    <div class="home-body">
       <h2>Choose Your Role</h2>
-      <div class="buttons">
-        <a href="/admin/login" class="btn btn-admin">Admin Login</a>
-        <a href="/lecturer/login" class="btn btn-lecturer">Trainer Login</a>
-        <a href="/student/login" class="btn btn-student">Trainee Login</a>
+      <div class="role-grid">
+        <a href="/admin/login" class="role-btn role-admin"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="/lecturer/login" class="role-btn role-trainer"><i class="fas fa-chalkboard-teacher"></i> Trainer</a>
+        <a href="/student/login" class="role-btn role-student"><i class="fas fa-user-graduate"></i> Trainee</a>
       </div>
     </div>
-    <div class="footer">
-      <p>&copy; 2025 Thika Technical Training Institute. All rights reserved.</p>
-    </div>
+    <div class="home-footer">&copy; 2025 Thika Technical Training Institute. All rights reserved.</div>
   </div>
+</div>
 </body>
 </html>

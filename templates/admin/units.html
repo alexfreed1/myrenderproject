@@ -1,43 +1,53 @@
 {% extends 'admin/base.html' %}
 {% block title %}Units{% endblock %}
 {% block content %}
-<div class="container">
-  <h3><i class="fas fa-book"></i> Manage Units</h3>
-  {% if error %}<div class="error">{{ error }}</div>{% endif %}
-  {% if success %}<div class="success">{{ success }}</div>{% endif %}
+<h1 class="page-title"><i class="fas fa-book"></i> Manage Units</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+{% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
 
-  <div class="form-section">
-    <h3>Add New Unit</h3>
-    <form method="post" action="/admin/units">
-      <label>Unit Code:</label><input type="text" name="code" required>
-      <label>Unit Name:</label><input type="text" name="name" required>
-      <button type="submit" name="add_unit" value="1">Add Unit</button>
-    </form>
-  </div>
+<div class="section-card">
+  <h3>Add New Unit</h3>
+  <form method="post" action="/admin/units" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:140px;">
+      <label>Unit Code</label>
+      <input type="text" name="code" class="form-control" required placeholder="e.g. EE101">
+    </div>
+    <div class="form-group" style="margin:0;flex:2;min-width:200px;">
+      <label>Unit Name</label>
+      <input type="text" name="name" class="form-control" required placeholder="e.g. Circuit Theory">
+    </div>
+    <button type="submit" name="add_unit" value="1" class="btn btn-primary"><i class="fas fa-plus"></i> Add</button>
+  </form>
+</div>
 
-  <div class="form-section">
-    <h3>Import Units (CSV)</h3>
-    <form method="post" action="/admin/units" enctype="multipart/form-data">
-      <p style="margin-bottom:10px;color:#666;"><strong>Format:</strong> Unit Code, Unit Name</p>
-      <input type="file" name="csv_file" required accept=".csv">
-      <button type="submit" name="import_csv" value="1">Import CSV</button>
-    </form>
-  </div>
+<div class="section-card">
+  <h3>Import Units (CSV)</h3>
+  <form method="post" action="/admin/units" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+    <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+      <label style="color:#666;font-weight:400;">Format: Unit Code, Unit Name</label>
+      <input type="file" name="csv_file" class="form-control" required accept=".csv">
+    </div>
+    <button type="submit" name="import_csv" value="1" class="btn btn-primary"><i class="fas fa-upload"></i> Import CSV</button>
+  </form>
+</div>
 
+<div class="section-card">
   <h3>Existing Units</h3>
-  <table>
-    <thead><tr><th>Code</th><th>Name</th><th>Action</th></tr></thead>
-    <tbody>
-      {% for u in units_list %}
-      <tr>
-        <td>{{ u.code }}</td>
-        <td>{{ u.name }}</td>
-        <td><a href="/admin/units?delete={{ u.id }}" class="delete-link" onclick="return confirm('Delete?')">Delete</a></td>
-      </tr>
-      {% else %}
-      <tr><td colspan="3" style="text-align:center;color:#888;">No units yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Code</th><th>Name</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for u in units_list %}
+        <tr>
+          <td><strong>{{ u.code }}</strong></td>
+          <td>{{ u.name }}</td>
+          <td><a href="/admin/units?delete={{ u.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')"><i class="fas fa-trash"></i></a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" style="text-align:center;color:#888;padding:20px;">No units yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

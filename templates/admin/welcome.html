@@ -1,10 +1,16 @@
 {% extends 'admin/base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div style="padding: 30px;">
-  <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-    <h1 style="color: #1e5a9f; font-size: 24px; margin-bottom: 10px;">Admin Dashboard</h1>
-    <p style="color: #666;">Welcome to the Thika Technical Training Institute Attendance Management System.</p>
+<h1 class="page-title"><i class="fas fa-home"></i> Admin Dashboard</h1>
+<div class="section-card">
+  <p style="color:#666;font-size:15px;">Welcome to the <strong>Thika Technical Training Institute</strong> Attendance Management System.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:24px;">
+    <a href="/admin/departments" style="background:#e3f2fd;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#1e5a9f;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-building fa-2x" style="margin-bottom:8px;display:block;"></i>Departments</a>
+    <a href="/admin/trainers" style="background:#f3e5f5;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#6a1b9a;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-chalkboard-teacher fa-2x" style="margin-bottom:8px;display:block;"></i>Trainers</a>
+    <a href="/admin/classes" style="background:#e8f5e9;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#2e7d32;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-school fa-2x" style="margin-bottom:8px;display:block;"></i>Classes</a>
+    <a href="/admin/students" style="background:#fff3e0;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#e65100;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-user-graduate fa-2x" style="margin-bottom:8px;display:block;"></i>Students</a>
+    <a href="/admin/units" style="background:#fce4ec;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#880e4f;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-book fa-2x" style="margin-bottom:8px;display:block;"></i>Units</a>
+    <a href="/admin/view_attendance" style="background:#e0f7fa;border-radius:8px;padding:20px;text-align:center;text-decoration:none;color:#006064;font-weight:600;transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''"><i class="fas fa-clipboard-list fa-2x" style="margin-bottom:8px;display:block;"></i>Attendance</a>
   </div>
 </div>
 {% endblock %}

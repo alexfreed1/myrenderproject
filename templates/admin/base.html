@@ -1,72 +1,64 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>{% block title %}Admin{% endblock %} - Admin Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; }
-    .dashboard-container { display: flex; min-height: 100vh; }
-    .sidebar { width: 260px; min-width: 260px; background: linear-gradient(180deg, #1e5a9f 0%, #154070 100%); color: white; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto; }
-    .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .sidebar-header img { height: 60px; margin-bottom: 10px; border-radius: 50%; border: 2px solid white; }
-    .sidebar-header h2 { font-size: 14px; font-weight: bold; margin: 0; opacity: 0.9; }
-    .sidebar-header h3 { font-size: 12px; font-weight: normal; margin: 5px 0 0; opacity: 0.7; }
-    .sidebar-menu { flex: 1; padding: 20px 0; }
-    .sidebar-menu a { display: block; padding: 15px 25px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; border-left: 4px solid transparent; }
-    .sidebar-menu a:hover, .sidebar-menu a.active { background: rgba(255,255,255,0.1); color: white; border-left-color: #ffd700; }
-    .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .sidebar-footer a { display: block; padding: 10px; text-align: center; background: rgba(255,0,0,0.2); color: white; text-decoration: none; border-radius: 4px; }
-    .sidebar-footer a:hover { background: rgba(255,0,0,0.4); }
-    .main-content { margin-left: 260px; flex: 1; min-height: 100vh; }
-    /* Page content styles */
-    .page-header { background: white; padding: 20px; border-bottom: 3px solid #1e5a9f; display: flex; justify-content: space-between; align-items: center; }
-    .page-header h2 { margin: 0; color: #1e5a9f; }
-    .page-header a { color: #1e5a9f; text-decoration: none; font-weight: bold; }
-    .container { max-width: 1100px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    h3 { color: #1e5a9f; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-    .form-section { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-    label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-    input[type="text"], input[type="file"], input[type="email"], input[type="password"], select { width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px; display: block; font-size: 14px; }
-    button, .btn { padding: 10px 20px; background-color: #1e5a9f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; text-decoration: none; display: inline-block; }
-    button:hover, .btn:hover { background-color: #154070; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    table th { background-color: #1e5a9f; color: white; padding: 12px; text-align: left; }
-    table td { padding: 12px; border-bottom: 1px solid #ddd; }
-    table tr:hover { background-color: #f9f9f9; }
-    .error { color: #d32f2f; background-color: #ffebee; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-    .success { color: #155724; background-color: #d4edda; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
-    .delete-link { color: #d32f2f; text-decoration: none; }
-    .delete-link:hover { text-decoration: underline; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin{% endblock %} | TTTTI</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<div class="dashboard-container">
-  <div class="sidebar">
+<button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="admin-layout">
+  <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <img src="{{ LOGO_URL }}" alt="Logo">
       <h2>THIKA TECHNICAL</h2>
       <h3>TRAINING INSTITUTE</h3>
     </div>
     <div class="sidebar-menu">
-      <a href="/admin/welcome" {% if active == 'welcome' %}class="active"{% endif %}>🏠 Dashboard</a>
-      <a href="/admin/departments" {% if active == 'departments' %}class="active"{% endif %}>🏢 Departments</a>
-      <a href="/admin/trainers" {% if active == 'trainers' %}class="active"{% endif %}>👨‍🏫 Trainers</a>
-      <a href="/admin/classes" {% if active == 'classes' %}class="active"{% endif %}>🏫 Classes</a>
-      <a href="/admin/students" {% if active == 'students' %}class="active"{% endif %}>🎓 Students</a>
-      <a href="/admin/units" {% if active == 'units' %}class="active"{% endif %}>📚 Units</a>
-      <a href="/admin/assign_units" {% if active == 'assign_units' %}class="active"{% endif %}>🔗 Assign Units</a>
-      <a href="/admin/view_attendance" {% if active == 'view_attendance' %}class="active"{% endif %}>📋 View Attendance</a>
-      <a href="/admin/import_data" {% if active == 'import_data' %}class="active"{% endif %}>📥 Import Data</a>
+      <a href="/admin/welcome"><i class="fas fa-home fa-fw"></i> Dashboard</a>
+      <a href="/admin/departments"><i class="fas fa-building fa-fw"></i> Departments</a>
+      <a href="/admin/trainers"><i class="fas fa-chalkboard-teacher fa-fw"></i> Trainers</a>
+      <a href="/admin/classes"><i class="fas fa-school fa-fw"></i> Classes</a>
+      <a href="/admin/students"><i class="fas fa-user-graduate fa-fw"></i> Students</a>
+      <a href="/admin/units"><i class="fas fa-book fa-fw"></i> Units</a>
+      <a href="/admin/assign_units"><i class="fas fa-link fa-fw"></i> Assign Units</a>
+      <a href="/admin/view_attendance"><i class="fas fa-clipboard-list fa-fw"></i> View Attendance</a>
+      <a href="/admin/import_data"><i class="fas fa-file-import fa-fw"></i> Import Data</a>
     </div>
     <div class="sidebar-footer">
-      <a href="/admin/logout">Logout</a>
+      <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
-  </div>
-  <div class="main-content">
-    {% block content %}{% endblock %}
-  </div>
+  </nav>
+
+  <main class="admin-main">
+    <div class="page-content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
 </div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const hamburger = document.getElementById('hamburger');
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+  });
+  // Highlight active link
+  document.querySelectorAll('.sidebar-menu a').forEach(a => {
+    if (a.href === location.href || location.pathname.startsWith(new URL(a.href).pathname)) {
+      a.classList.add('active');
+    }
+  });
+</script>
 </body>
 </html>
