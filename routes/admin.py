@@ -47,7 +47,16 @@ def dashboard():
 def welcome():
     if not session.get('admin'):
         return redirect(url_for('admin.login'))
-    return render_template('admin/welcome.html')
+    db = get_db(); cur = db.cursor()
+    cur.execute("SELECT COUNT(*) as c FROM departments"); depts_count = cur.fetchone()['c']
+    cur.execute("SELECT COUNT(*) as c FROM trainers");    trainers_count = cur.fetchone()['c']
+    cur.execute("SELECT COUNT(*) as c FROM classes");     classes_count = cur.fetchone()['c']
+    cur.execute("SELECT COUNT(*) as c FROM students");    students_count = cur.fetchone()['c']
+    cur.execute("SELECT COUNT(*) as c FROM units");       units_count = cur.fetchone()['c']
+    return render_template('admin/welcome.html',
+        depts_count=depts_count, trainers_count=trainers_count,
+        classes_count=classes_count, students_count=students_count,
+        units_count=units_count)
 
 # ── Departments ───────────────────────────────────────────────────────────────
 
