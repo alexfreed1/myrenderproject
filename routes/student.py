@@ -41,12 +41,14 @@ def logout():
 def register():
     error = None
     db = get_db(); cur = db.cursor()
+    dept_id = request.args.get('dept_id', 0, type=int)
     if request.method == 'POST':
         adm = request.form.get('admission_number', '').strip()
         pwd = request.form.get('password', '')
         fullname = request.form.get('fullname', '').strip()
         email = request.form.get('email', '').strip()
         class_id = request.form.get('class_id', 0, type=int)
+        dept_id = request.form.get('dept_id', 0, type=int)
         if adm and pwd and fullname and email and class_id:
             cur.execute("SELECT id, email FROM students WHERE admission_number=%s", (adm,))
             row = cur.fetchone()
@@ -55,14 +57,21 @@ def register():
             elif row['email']:
                 error = "Account already registered. Please login."
             else:
-                cur.execute("UPDATE students SET full_name=%s, email=%s, password=%s, class_id=%s WHERE id=%s", (fullname, email, pwd, class_id, row['id']))
+                cur.execute("UPDATE students SET full_name=%s, email=%s, password=%s, class_id=%s WHERE id=%s",
+                            (fullname, email, pwd, class_id, row['id']))
                 db.commit()
                 return redirect(url_for('student.login') + '?registered=1')
         else:
             error = "All fields are required."
-    cur.execute("SELECT id, name FROM classes ORDER BY name")
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    departments = cur.fetchall()
+    if dept_id:
+        cur.execute("SELECT id, name FROM classes WHERE department_id=%s ORDER BY name", (dept_id,))
+    else:
+        cur.execute("SELECT id, name FROM classes ORDER BY name")
     classes = cur.fetchall()
-    return render_template('student/register.html', error=error, classes=classes)
+    return render_template('student/register.html', error=error, classes=classes,
+                           departments=departments, dept_id=dept_id)
 
 @student_bp.route('/dashboard')
 @student_required
