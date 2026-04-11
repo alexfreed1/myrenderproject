@@ -1,8 +1,11 @@
+import re
 from flask import Blueprint, render_template, request, session, redirect, url_for
 from db import get_db
 from functools import wraps
 
 student_bp = Blueprint('student', __name__)
+
+EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 def student_required(f):
     @wraps(f)
@@ -46,10 +49,14 @@ def register():
         adm = request.form.get('admission_number', '').strip()
         pwd = request.form.get('password', '')
         fullname = request.form.get('fullname', '').strip()
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         class_id = request.form.get('class_id', 0, type=int)
         dept_id = request.form.get('dept_id', 0, type=int)
-        if adm and pwd and fullname and email and class_id:
+        if not (adm and pwd and fullname and email and class_id):
+            error = "All fields are required."
+        elif not EMAIL_RE.match(email):
+            error = "Please enter a valid email address (e.g. name@example.com)."
+        else:
             cur.execute("SELECT id, email FROM students WHERE admission_number=%s", (adm,))
             row = cur.fetchone()
             if not row:
@@ -61,8 +68,6 @@ def register():
                             (fullname, email, pwd, class_id, row['id']))
                 db.commit()
                 return redirect(url_for('student.login') + '?registered=1')
-        else:
-            error = "All fields are required."
     cur.execute("SELECT * FROM departments ORDER BY name")
     departments = cur.fetchall()
     if dept_id:
