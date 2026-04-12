@@ -373,7 +373,13 @@ def assign_units():
     else:
         cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
-    cur.execute("SELECT * FROM units ORDER BY code")
+    if filter_dept:
+        cur.execute("""SELECT DISTINCT u.* FROM units u
+            JOIN class_units cu ON cu.unit_id=u.id
+            JOIN classes c ON cu.class_id=c.id
+            WHERE c.department_id=%s ORDER BY u.code""", (filter_dept,))
+    else:
+        cur.execute("SELECT * FROM units ORDER BY code")
     units = cur.fetchall()
     if filter_dept:
         cur.execute("SELECT * FROM trainers WHERE department_id=%s ORDER BY name", (filter_dept,))
@@ -510,7 +516,13 @@ def view_attendance():
     else:
         cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
-    cur.execute("SELECT * FROM units ORDER BY code")
+    if dept_id:
+        cur.execute("""SELECT DISTINCT u.* FROM units u
+            JOIN class_units cu ON cu.unit_id=u.id
+            JOIN classes c ON cu.class_id=c.id
+            WHERE c.department_id=%s ORDER BY u.code""", (dept_id,))
+    else:
+        cur.execute("SELECT * FROM units ORDER BY code")
     units = cur.fetchall()
     attendance = []
     if class_id and unit_id and week and lesson:
