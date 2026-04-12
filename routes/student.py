@@ -48,7 +48,7 @@ def register():
     if request.method == 'POST':
         adm = request.form.get('admission_number', '').strip()
         pwd = request.form.get('password', '')
-        fullname = request.form.get('fullname', '').strip()
+        fullname = request.form.get('fullname', '').strip().upper()
         email = request.form.get('email', '').strip().lower()
         class_id = request.form.get('class_id', 0, type=int)
         dept_id = request.form.get('dept_id', 0, type=int)

@@ -67,7 +67,7 @@ def departments():
     error = None
     success = None
     if request.method == 'POST' and request.form.get('add_dept'):
-        name = request.form.get('name', '').strip()
+        name = request.form.get('name', '').strip().upper()
         if name:
             cur.execute("SELECT id FROM departments WHERE name=%s", (name,))
             if cur.fetchone():
@@ -95,7 +95,7 @@ def classes():
     error = success = None
     if request.method == 'POST':
         if request.form.get('add_class'):
-            name = request.form.get('name', '').strip()
+            name = request.form.get('name', '').strip().upper()
             dept_id = request.form.get('department_id', 0, type=int)
             if name and dept_id:
                 cur.execute("SELECT id FROM classes WHERE name=%s AND department_id=%s", (name, dept_id))
@@ -115,7 +115,7 @@ def classes():
                 reader = csv.reader(stream)
                 for row in reader:
                     if len(row) >= 2:
-                        cname, dname = row[0].strip(), row[1].strip()
+                        cname, dname = row[0].strip().upper(), row[1].strip().upper()
                         cur.execute("SELECT id FROM departments WHERE name=%s", (dname,))
                         dept = cur.fetchone()
                         if dept:
@@ -148,8 +148,8 @@ def units():
     error = success = None
     if request.method == 'POST':
         if request.form.get('add_unit'):
-            code = request.form.get('code', '').strip()
-            name = request.form.get('name', '').strip()
+            code = request.form.get('code', '').strip().upper()
+            name = request.form.get('name', '').strip().upper()
             dept_id = request.form.get('department_id', 0, type=int)
             if code and name:
                 cur.execute("SELECT id FROM units WHERE code=%s", (code,))
@@ -169,7 +169,7 @@ def units():
                 reader = csv.reader(stream)
                 for row in reader:
                     if len(row) >= 2:
-                        code, name = row[0].strip(), row[1].strip()
+                        code, name = row[0].strip().upper(), row[1].strip().upper()
                         if code and name:
                             cur.execute("SELECT id FROM units WHERE code=%s", (code,))
                             if not cur.fetchone():
@@ -197,7 +197,7 @@ def trainers():
     error = success = None
     if request.method == 'POST':
         if request.form.get('add_trainer'):
-            name = request.form.get('name', '').strip()
+            name = request.form.get('name', '').strip().upper()
             username = request.form.get('username', '').strip()
             password = request.form.get('password', '')
             dept_id = request.form.get('department_id', 0, type=int)
@@ -213,7 +213,7 @@ def trainers():
                 reader = csv.reader(stream)
                 for row in reader:
                     if len(row) >= 4:
-                        tname, uname, pwd, dname = [x.strip() for x in row[:4]]
+                        tname, uname, pwd, dname = [x.strip() for x in row[:4]]; tname = tname.upper(); dname = dname.upper()
                         if not uname: continue
                         cur.execute("SELECT id FROM departments WHERE name=%s", (dname,))
                         dept = cur.fetchone()
@@ -245,7 +245,7 @@ def students():
     error = success = None
     if request.method == 'POST':
         if request.form.get('add_student'):
-            name = request.form.get('name', '').strip()
+            name = request.form.get('name', '').strip().upper()
             adm = request.form.get('admission_number', '').strip()
             class_id = request.form.get('class_id', 0, type=int)
             if name and adm and class_id:
@@ -266,7 +266,7 @@ def students():
                 reader = csv.reader(stream)
                 for row in reader:
                     if len(row) >= 3:
-                        sname, adm, class_ref = row[0].strip(), row[1].strip(), row[2].strip()
+                        sname, adm, class_ref = row[0].strip().upper(), row[1].strip(), row[2].strip().upper()
                         class_id = 0
                         if class_ref.isdigit():
                             cur.execute("SELECT id FROM classes WHERE id=%s", (int(class_ref),))
@@ -584,23 +584,23 @@ def import_data():
                 try:
                     ok = False
                     if dtype == 'departments' and row:
-                        name = row[0].strip()
+                        name = row[0].strip().upper()
                         if name:
                             cur.execute("INSERT INTO departments (name) VALUES (%s) ON CONFLICT (name) DO NOTHING", (name,))
                             ok = True
                     elif dtype == 'classes' and len(row) >= 2:
-                        cname, dname = row[0].strip(), row[1].strip()
+                        cname, dname = row[0].strip().upper(), row[1].strip().upper()
                         cur.execute("SELECT id FROM departments WHERE name=%s", (dname,))
                         d = cur.fetchone()
                         if d:
                             cur.execute("INSERT INTO classes (name, department_id) VALUES (%s,%s) ON CONFLICT DO NOTHING", (cname, d['id']))
                             ok = True
                     elif dtype == 'units' and len(row) >= 2:
-                        code, name = row[0].strip(), row[1].strip()
+                        code, name = row[0].strip().upper(), row[1].strip().upper()
                         cur.execute("INSERT INTO units (code, name) VALUES (%s,%s) ON CONFLICT (code) DO NOTHING", (code, name))
                         ok = True
                     elif dtype == 'trainers' and len(row) >= 4:
-                        tname, uname, pwd, dname = [x.strip() for x in row[:4]]
+                        tname, uname, pwd, dname = [x.strip() for x in row[:4]]; tname = tname.upper(); dname = dname.upper()
                         cur.execute("SELECT id FROM departments WHERE name=%s", (dname,))
                         d = cur.fetchone()
                         if d:
