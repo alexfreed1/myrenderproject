@@ -100,6 +100,8 @@ def init_db():
         trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
         lesson VARCHAR(10) NOT NULL,
         week INT NOT NULL,
+        year INT NOT NULL DEFAULT 2026,
+        term INT NOT NULL DEFAULT 1,
         status VARCHAR(10) NOT NULL,
         attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")

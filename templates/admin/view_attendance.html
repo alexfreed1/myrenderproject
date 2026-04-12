@@ -59,6 +59,26 @@
         </select>
       </div>
 
+      <div class="form-group" style="margin:0;">
+        <label>Year</label>
+        <select name="year" class="form-control">
+          <option value="">All Years</option>
+          {% for y in range(2026, 2036) %}
+            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label>Term</label>
+        <select name="term" class="form-control">
+          <option value="">All Terms</option>
+          <option value="1" {% if term == 1 %}selected{% endif %}>Term 1 (Jan–Apr)</option>
+          <option value="2" {% if term == 2 %}selected{% endif %}>Term 2 (May–Aug)</option>
+          <option value="3" {% if term == 3 %}selected{% endif %}>Term 3 (Sep–Dec)</option>
+        </select>
+      </div>
+
     </div>
     <div style="margin-top:16px;">
       <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> View Records</button>

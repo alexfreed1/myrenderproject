@@ -84,6 +84,8 @@ def dashboard():
     unit_id = request.args.get('unit_id', 0, type=int)
     week = request.args.get('week', 1, type=int)
     lesson = request.args.get('lesson', 'L1')
+    year = request.args.get('year', 2026, type=int)
+    term = request.args.get('term', 1, type=int)
     units_list = []
     students_list = []
     attendance_submitted = False
@@ -95,9 +97,13 @@ def dashboard():
         cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number ASC", (class_id,))
         students_list = cur.fetchall()
     if unit_id and week and lesson:
-        cur.execute("SELECT id FROM attendance WHERE unit_id=%s AND trainer_id=%s AND week=%s AND lesson=%s LIMIT 1", (unit_id, trainer['id'], week, lesson))
+        cur.execute("SELECT id FROM attendance WHERE unit_id=%s AND trainer_id=%s AND week=%s AND lesson=%s AND year=%s AND term=%s LIMIT 1",
+                    (unit_id, trainer['id'], week, lesson, year, term))
         attendance_submitted = cur.fetchone() is not None
-    return render_template('lecturer/dashboard.html', trainer=trainer, dept_name=dept_name, class_list=class_list, units_list=units_list, students_list=students_list, class_id=class_id, unit_id=unit_id, week=week, lesson=lesson, attendance_submitted=attendance_submitted)
+    return render_template('lecturer/dashboard.html', trainer=trainer, dept_name=dept_name,
+        class_list=class_list, units_list=units_list, students_list=students_list,
+        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson,
+        year=year, term=term, attendance_submitted=attendance_submitted)
 
 # ── Submit Attendance ─────────────────────────────────────────────────────────
 
@@ -112,6 +118,8 @@ def submit_attendance():
     unit_id = request.form.get('unit_id', 0, type=int)
     week = request.form.get('week', 0, type=int)
     lesson = request.form.get('lesson', '')
+    year = request.form.get('year', 2026, type=int)
+    term = request.form.get('term', 1, type=int)
     statuses = {}
     for key, val in request.form.items():
         if key.startswith('status[') and key.endswith(']'):
@@ -128,12 +136,16 @@ def submit_attendance():
         for sid, status_val in statuses.items():
             student_id = int(sid)
             status = 'Present' if status_val == 'present' else 'Absent'
-            cur.execute("SELECT id FROM attendance WHERE student_id=%s AND unit_id=%s AND week=%s AND lesson=%s", (student_id, unit_id, week, lesson))
+            cur.execute("SELECT id FROM attendance WHERE student_id=%s AND unit_id=%s AND week=%s AND lesson=%s AND year=%s AND term=%s",
+                        (student_id, unit_id, week, lesson, year, term))
             existing = cur.fetchone()
             if existing:
-                cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s", (status, trainer_id, existing['id']))
+                cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s",
+                            (status, trainer_id, existing['id']))
             else:
-                cur.execute("INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, status, attendance_date) VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())", (student_id, unit_id, unit_code, trainer_id, week, lesson, status))
+                cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, attendance_date)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())""",
+                    (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status))
         db.commit()
         return jsonify({'success': True, 'message': 'Attendance submitted successfully.'})
     except Exception as e:
@@ -151,9 +163,10 @@ def view_attendance():
     unit_id = request.args.get('unit_id', 0, type=int)
     week = request.args.get('week', 0, type=int)
     lesson = request.args.get('lesson', '')
+    year = request.args.get('year', 2026, type=int)
+    term = request.args.get('term', 1, type=int)
     cls = unit = dept = None
     records = []
-    # Fetch all students in class to show unmarked ones too
     all_students = []
     if class_id and unit_id and week and lesson:
         cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
@@ -162,18 +175,17 @@ def view_attendance():
         unit = cur.fetchone()
         cur.execute("""SELECT a.*, s.admission_number, s.full_name FROM attendance a
             JOIN students s ON s.id=a.student_id
-            WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND a.trainer_id=%s
-            ORDER BY s.admission_number ASC""", (unit_id, week, lesson, trainer['id']))
+            WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND a.trainer_id=%s AND a.year=%s AND a.term=%s
+            ORDER BY s.admission_number ASC""", (unit_id, week, lesson, trainer['id'], year, term))
         records = cur.fetchall()
         if cls:
             dept = {'name': cls['dept_name']}
-        # Students not yet marked
         marked_ids = [r['student_id'] for r in records]
         cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number ASC", (class_id,))
         all_students = [s for s in cur.fetchall() if s['id'] not in marked_ids]
     return render_template('lecturer/view_attendance.html', trainer=trainer, cls=cls, unit=unit,
         dept=dept, records=records, all_students=all_students,
-        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
+        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson, year=year, term=term)
 
 
 # ── Update single attendance record ──────────────────────────────────────────
@@ -189,11 +201,13 @@ def update_attendance():
     unit_id = request.form.get('unit_id', 0)
     week = request.form.get('week', 0)
     lesson = request.form.get('lesson', '')
+    year = request.form.get('year', 2026)
+    term = request.form.get('term', 1)
     if att_id and new_status in ('Present', 'Absent'):
         cur.execute("UPDATE attendance SET status=%s, attendance_date=NOW() WHERE id=%s AND trainer_id=%s",
                     (new_status, att_id, trainer_id))
         db.commit()
-    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
 
 # ── Add missed student attendance ─────────────────────────────────────────────
@@ -209,21 +223,24 @@ def add_attendance():
     lesson = request.form.get('lesson', '')
     status = request.form.get('status', 'Present')
     class_id = request.form.get('class_id', 0)
+    year = request.form.get('year', 2026, type=int)
+    term = request.form.get('term', 1, type=int)
     if student_id and unit_id and week and lesson and status in ('Present', 'Absent'):
         cur.execute("SELECT code FROM units WHERE id=%s", (unit_id,))
         u = cur.fetchone()
         unit_code = u['code'] if u else ''
-        cur.execute("SELECT id FROM attendance WHERE student_id=%s AND unit_id=%s AND week=%s AND lesson=%s",
-                    (student_id, unit_id, week, lesson))
+        cur.execute("SELECT id FROM attendance WHERE student_id=%s AND unit_id=%s AND week=%s AND lesson=%s AND year=%s AND term=%s",
+                    (student_id, unit_id, week, lesson, year, term))
         existing = cur.fetchone()
         if existing:
             cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s",
                         (status, trainer_id, existing['id']))
         else:
-            cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, status, attendance_date)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,NOW())""", (student_id, unit_id, unit_code, trainer_id, week, lesson, status))
+            cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, attendance_date)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())""",
+                (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status))
         db.commit()
-    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
 
 # ── Delete single attendance record ──────────────────────────────────────────
@@ -238,10 +255,12 @@ def delete_attendance():
     unit_id = request.form.get('unit_id', 0)
     week = request.form.get('week', 0)
     lesson = request.form.get('lesson', '')
+    year = request.form.get('year', 2026)
+    term = request.form.get('term', 1)
     if att_id:
         cur.execute("DELETE FROM attendance WHERE id=%s AND trainer_id=%s", (att_id, trainer_id))
         db.commit()
-    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
 
 # ── Delete entire lesson attendance ──────────────────────────────────────────
@@ -255,11 +274,13 @@ def delete_lesson_attendance():
     week = request.form.get('week', 0, type=int)
     lesson = request.form.get('lesson', '')
     class_id = request.form.get('class_id', 0)
+    year = request.form.get('year', 2026, type=int)
+    term = request.form.get('term', 1, type=int)
     if unit_id and week and lesson:
-        cur.execute("""DELETE FROM attendance WHERE unit_id=%s AND week=%s AND lesson=%s AND trainer_id=%s""",
-                    (unit_id, week, lesson, trainer_id))
+        cur.execute("""DELETE FROM attendance WHERE unit_id=%s AND week=%s AND lesson=%s AND trainer_id=%s AND year=%s AND term=%s""",
+                    (unit_id, week, lesson, trainer_id, year, term))
         db.commit()
-    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}')
+    return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
 # ── Trainee Attendance Search ─────────────────────────────────────────────────
 

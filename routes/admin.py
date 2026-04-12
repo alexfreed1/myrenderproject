@@ -481,6 +481,8 @@ def view_attendance():
     unit_id  = request.args.get('unit_id',  0, type=int)
     week     = request.args.get('week',     0, type=int)
     lesson   = request.args.get('lesson',  '')
+    year     = request.args.get('year',  0, type=int)
+    term     = request.args.get('term',  0, type=int)
     cur.execute("SELECT * FROM departments ORDER BY name")
     departments = cur.fetchall()
     if dept_id:
@@ -492,15 +494,22 @@ def view_attendance():
     units = cur.fetchall()
     attendance = []
     if class_id and unit_id and week and lesson:
-        cur.execute("""SELECT a.*, s.admission_number, s.full_name
+        conditions = ["a.unit_id=%s", "a.week=%s", "a.lesson=%s", "s.class_id=%s"]
+        params = [unit_id, week, lesson, class_id]
+        if year:
+            conditions.append("a.year=%s"); params.append(year)
+        if term:
+            conditions.append("a.term=%s"); params.append(term)
+        cur.execute(f"""SELECT a.*, s.admission_number, s.full_name
             FROM attendance a JOIN students s ON a.student_id=s.id
-            WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND s.class_id=%s
-            ORDER BY s.admission_number""", (unit_id, week, lesson, class_id))
+            WHERE {' AND '.join(conditions)}
+            ORDER BY s.admission_number ASC""", params)
         attendance = cur.fetchall()
     return render_template('admin/view_attendance.html',
         departments=departments, classes=classes, units=units,
         attendance=attendance, dept_id=dept_id,
-        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson)
+        class_id=class_id, unit_id=unit_id, week=week, lesson=lesson,
+        year=year, term=term)
 
 # ── Download Attendance PDF ───────────────────────────────────────────────────
 

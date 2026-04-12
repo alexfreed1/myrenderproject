@@ -64,6 +64,20 @@
           {% for l in ['L1','L2','L3','L4'] %}<option value="{{ l }}" {% if lesson == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
         </select>
       </div>
+      <div>
+        <label class="font-medium">Year:</label>
+        <select id="yearSelect" class="block w-full rounded-lg border px-2 py-1" onchange="onFilterChange()">
+          {% for y in range(2026, 2036) %}<option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="font-medium">Term:</label>
+        <select id="termSelect" class="block w-full rounded-lg border px-2 py-1" onchange="onFilterChange()">
+          <option value="1" {% if term == 1 %}selected{% endif %}>Term 1 (Jan–Apr)</option>
+          <option value="2" {% if term == 2 %}selected{% endif %}>Term 2 (May–Aug)</option>
+          <option value="3" {% if term == 3 %}selected{% endif %}>Term 3 (Sep–Dec)</option>
+        </select>
+      </div>
     </div>
     <div id="studentListContainer" class="bg-gray-50 p-4 rounded-lg shadow-inner mb-6">
       <h2 class="text-xl font-semibold text-gray-700 mb-4">Student List</h2>
@@ -122,7 +136,7 @@
       var w = document.getElementById('weekSelect').value;
       var l = document.getElementById('lessonSelect').value;
       if (!c || !u || !w || !l) { alert('Please select Class, Unit, Week and Lesson first.'); return; }
-      window.location = '/lecturer/view_attendance?class_id=' + c + '&unit_id=' + u + '&week=' + w + '&lesson=' + encodeURIComponent(l);
+      window.location = '/lecturer/view_attendance?class_id=' + c + '&unit_id=' + u + '&week=' + w + '&lesson=' + encodeURIComponent(l) + '&year=' + document.getElementById('yearSelect').value + '&term=' + document.getElementById('termSelect').value;
     }
 
     document.getElementById('submitBtn').addEventListener('click', function () {
@@ -130,6 +144,8 @@
       var unitId = document.getElementById('unitSelect').value;
       var week = document.getElementById('weekSelect').value;
       var lesson = document.getElementById('lessonSelect').value;
+      var yearVal = document.getElementById('yearSelect').value;
+      var termVal = document.getElementById('termSelect').value;
       var msg = document.getElementById('message');
       var spinner = document.getElementById('loadingSpinner');
       if (!classId || !unitId || !week || !lesson) {
@@ -140,6 +156,8 @@
       form.append('unit_id', unitId);
       form.append('week', week);
       form.append('lesson', lesson);
+      form.append('year', yearVal);
+      form.append('term', termVal);
       var any = false;
       studentIds.forEach(function (sid) {
         var p = document.getElementById('present_' + sid);
@@ -163,11 +181,15 @@
       var u = document.getElementById('unitSelect').value;
       var w = document.getElementById('weekSelect').value;
       var l = document.getElementById('lessonSelect').value;
+      var y = document.getElementById('yearSelect').value;
+      var t = document.getElementById('termSelect').value;
       var params = new URLSearchParams();
       if (c) params.set('class_id', c);
       if (u) params.set('unit_id', u);
       if (w) params.set('week', w);
       if (l) params.set('lesson', l);
+      if (y) params.set('year', y);
+      if (t) params.set('term', t);
       window.location = '/lecturer/dashboard?' + params.toString();
     }
   </script>
