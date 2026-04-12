@@ -385,7 +385,92 @@ def assign_units():
     assignments = cur.fetchall()
     return render_template('admin/assign_units.html', depts_list=depts_list, classes=classes, units=units, trainers=trainers, assignments=assignments, filter_dept=filter_dept, filter_class=filter_class, filter_trainer=filter_trainer, error=error, success=success)
 
-# ── View Attendance ───────────────────────────────────────────────────────────
+# ── Credentials Management ────────────────────────────────────────────────────
+
+@admin_bp.route('/credentials', methods=['GET', 'POST'])
+@admin_required
+def credentials():
+    db = get_db(); cur = db.cursor()
+    success = error = None
+    tab = request.args.get('tab', 'trainers')  # 'trainers' or 'students'
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        # ── Update trainer credentials ──
+        if action == 'update_trainer':
+            tid = request.form.get('trainer_id', 0, type=int)
+            new_user = request.form.get('username', '').strip()
+            new_pass = request.form.get('password', '').strip()
+            if tid and new_user:
+                if new_pass:
+                    cur.execute("UPDATE trainers SET username=%s, password=%s WHERE id=%s", (new_user, new_pass, tid))
+                else:
+                    cur.execute("UPDATE trainers SET username=%s WHERE id=%s", (new_user, tid))
+                db.commit()
+                success = "Trainer credentials updated."
+            else:
+                error = "Trainer ID and username are required."
+            tab = 'trainers'
+
+        # ── Update student credentials ──
+        elif action == 'update_student':
+            sid = request.form.get('student_id', 0, type=int)
+            new_pass = request.form.get('password', '').strip()
+            if sid and new_pass:
+                cur.execute("UPDATE students SET password=%s WHERE id=%s", (new_pass, sid))
+                db.commit()
+                success = "Student password updated."
+            else:
+                error = "Student ID and new password are required."
+            tab = 'students'
+
+        # ── Reset student password to default ──
+        elif action == 'reset_student':
+            sid = request.form.get('student_id', 0, type=int)
+            if sid:
+                cur.execute("UPDATE students SET password='123456' WHERE id=%s", (sid,))
+                db.commit()
+                success = "Student password reset to 123456."
+            tab = 'students'
+
+        return redirect(url_for('admin.credentials') + f'?tab={tab}&msg=' + (success or error or ''))
+
+    msg = request.args.get('msg', '')
+
+    # Fetch trainers
+    search_t = request.args.get('search_t', '').strip()
+    if search_t:
+        cur.execute("""SELECT t.*, d.name as dept_name FROM trainers t
+            LEFT JOIN departments d ON t.department_id=d.id
+            WHERE t.name ILIKE %s OR t.username ILIKE %s ORDER BY t.name""",
+            (f'%{search_t}%', f'%{search_t}%'))
+    else:
+        cur.execute("""SELECT t.*, d.name as dept_name FROM trainers t
+            LEFT JOIN departments d ON t.department_id=d.id ORDER BY t.name""")
+    trainers_list = cur.fetchall()
+
+    # Fetch students
+    search_s = request.args.get('search_s', '').strip()
+    filter_class = request.args.get('filter_class', 0, type=int)
+    conditions = []; params = []
+    if search_s:
+        conditions.append("(s.full_name ILIKE %s OR s.admission_number ILIKE %s)")
+        params += [f'%{search_s}%', f'%{search_s}%']
+    if filter_class:
+        conditions.append("s.class_id=%s"); params.append(filter_class)
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    cur.execute(f"""SELECT s.*, c.name as class_name FROM students s
+        LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.full_name""", params)
+    students_list = cur.fetchall()
+
+    cur.execute("SELECT * FROM classes ORDER BY name")
+    classes_list = cur.fetchall()
+
+    return render_template('admin/credentials.html',
+        tab=tab, msg=msg, trainers_list=trainers_list,
+        students_list=students_list, classes_list=classes_list,
+        search_t=search_t, search_s=search_s, filter_class=filter_class)
 
 @admin_bp.route('/view_attendance')
 @admin_required
