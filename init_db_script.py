@@ -26,6 +26,9 @@ try:
     # Add year and term columns to attendance
     cur.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS year INT DEFAULT 2026")
     cur.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS term INT DEFAULT 1")
+    # Add year and term to class_units assignments
+    cur.execute("ALTER TABLE class_units ADD COLUMN IF NOT EXISTS year INT DEFAULT 2026")
+    cur.execute("ALTER TABLE class_units ADD COLUMN IF NOT EXISTS term INT DEFAULT 1")
     conn.commit()
     cur.close()
     conn.close()

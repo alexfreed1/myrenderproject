@@ -322,12 +322,16 @@ def assign_units():
             class_id = request.form.get('class_id', 0, type=int)
             unit_id = request.form.get('unit_id', 0, type=int)
             trainer_id = request.form.get('trainer_id', 0, type=int)
+            year = request.form.get('year', 2026, type=int)
+            term = request.form.get('term', 1, type=int)
             if class_id and unit_id and trainer_id:
-                cur.execute("SELECT id FROM class_units WHERE class_id=%s AND unit_id=%s AND trainer_id=%s", (class_id, unit_id, trainer_id))
+                cur.execute("SELECT id FROM class_units WHERE class_id=%s AND unit_id=%s AND trainer_id=%s AND year=%s AND term=%s",
+                            (class_id, unit_id, trainer_id, year, term))
                 if cur.fetchone():
-                    error = "This assignment already exists."
+                    error = "This assignment already exists for this term/year."
                 else:
-                    cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id) VALUES (%s,%s,%s)", (class_id, unit_id, trainer_id))
+                    cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id, year, term) VALUES (%s,%s,%s,%s,%s)",
+                                (class_id, unit_id, trainer_id, year, term))
                     db.commit()
                     return redirect(url_for('admin.assign_units'))
             else:
@@ -341,6 +345,8 @@ def assign_units():
                 for row in reader:
                     if len(row) >= 3:
                         cname, ucode, tuname = row[0].strip(), row[1].strip(), row[2].strip()
+                        year = int(row[3].strip()) if len(row) > 3 and row[3].strip().isdigit() else 2026
+                        term = int(row[4].strip()) if len(row) > 4 and row[4].strip().isdigit() else 1
                         cur.execute("SELECT id FROM classes WHERE name=%s", (cname,))
                         c = cur.fetchone()
                         cur.execute("SELECT id FROM units WHERE code=%s", (ucode,))
@@ -348,7 +354,8 @@ def assign_units():
                         cur.execute("SELECT id FROM trainers WHERE username=%s", (tuname,))
                         t = cur.fetchone()
                         if c and u and t:
-                            cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING", (c['id'], u['id'], t['id']))
+                            cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id, year, term) VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+                                        (c['id'], u['id'], t['id'], year, term))
                             count += 1
                 db.commit()
                 success = f"Imported {count} assignments successfully."
@@ -359,6 +366,8 @@ def assign_units():
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts_list = cur.fetchall()
     filter_dept = request.args.get('filter_dept', 0, type=int)
+    filter_year = request.args.get('filter_year', 0, type=int)
+    filter_term = request.args.get('filter_term', 0, type=int)
     if filter_dept:
         cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (filter_dept,))
     else:
@@ -380,10 +389,21 @@ def assign_units():
         conditions.append("cu.class_id=%s"); params.append(filter_class)
     if filter_trainer:
         conditions.append("cu.trainer_id=%s"); params.append(filter_trainer)
+    if filter_year:
+        conditions.append("cu.year=%s"); params.append(filter_year)
+    if filter_term:
+        conditions.append("cu.term=%s"); params.append(filter_term)
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
-    cur.execute(f"SELECT cu.id, c.name as class_name, u.code, u.name as unit_name, t.name as trainer_name FROM class_units cu JOIN classes c ON cu.class_id=c.id JOIN units u ON cu.unit_id=u.id JOIN trainers t ON cu.trainer_id=t.id {where} ORDER BY c.name, u.code", params)
+    cur.execute(f"""SELECT cu.id, c.name as class_name, u.code, u.name as unit_name,
+        t.name as trainer_name, cu.year, cu.term
+        FROM class_units cu JOIN classes c ON cu.class_id=c.id
+        JOIN units u ON cu.unit_id=u.id JOIN trainers t ON cu.trainer_id=t.id
+        {where} ORDER BY cu.year DESC, cu.term, c.name, u.code""", params)
     assignments = cur.fetchall()
-    return render_template('admin/assign_units.html', depts_list=depts_list, classes=classes, units=units, trainers=trainers, assignments=assignments, filter_dept=filter_dept, filter_class=filter_class, filter_trainer=filter_trainer, error=error, success=success)
+    return render_template('admin/assign_units.html', depts_list=depts_list, classes=classes,
+        units=units, trainers=trainers, assignments=assignments,
+        filter_dept=filter_dept, filter_class=filter_class, filter_trainer=filter_trainer,
+        filter_year=filter_year, filter_term=filter_term, error=error, success=success)
 
 # ── Credentials Management ────────────────────────────────────────────────────
 
