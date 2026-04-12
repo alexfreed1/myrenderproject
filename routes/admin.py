@@ -228,9 +228,9 @@ def trainers():
         return redirect(url_for('admin.trainers'))
     search = request.args.get('search', '').strip()
     if search:
-        cur.execute("SELECT t.*, d.name as dept_name FROM trainers t LEFT JOIN departments d ON t.department_id=d.id WHERE t.name ILIKE %s OR t.username ILIKE %s OR d.name ILIKE %s ORDER BY t.name", (f'%{search}%', f'%{search}%', f'%{search}%'))
+        cur.execute("SELECT t.*, d.name as dept_name FROM trainers t LEFT JOIN departments d ON t.department_id=d.id WHERE t.name ILIKE %s OR t.username ILIKE %s OR d.name ILIKE %s ORDER BY t.name ASC", (f'%{search}%', f'%{search}%', f'%{search}%'))
     else:
-        cur.execute("SELECT t.*, d.name as dept_name FROM trainers t LEFT JOIN departments d ON t.department_id=d.id ORDER BY t.name")
+        cur.execute("SELECT t.*, d.name as dept_name FROM trainers t LEFT JOIN departments d ON t.department_id=d.id ORDER BY t.name ASC")
     trainers_list = cur.fetchall()
     cur.execute("SELECT * FROM departments ORDER BY name")
     departments = cur.fetchall()
@@ -306,7 +306,7 @@ def students():
     if filter_adm:
         conditions.append("s.admission_number ILIKE %s"); params.append(f'%{filter_adm}%')
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
-    cur.execute(f"SELECT s.*, c.name as class_name FROM students s LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.admission_number", params)
+    cur.execute(f"SELECT s.*, c.name as class_name FROM students s LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.admission_number ASC", params)
     students_list = cur.fetchall()
     return render_template('admin/students.html', students_list=students_list, classes_list=classes_list, depts_list=depts_list, filter_dept=filter_dept, filter_class=filter_class, filter_adm=filter_adm, error=error, success=success)
 
@@ -443,11 +443,11 @@ def credentials():
     if search_t:
         cur.execute("""SELECT t.*, d.name as dept_name FROM trainers t
             LEFT JOIN departments d ON t.department_id=d.id
-            WHERE t.name ILIKE %s OR t.username ILIKE %s ORDER BY t.name""",
+            WHERE t.name ILIKE %s OR t.username ILIKE %s ORDER BY t.name ASC""",
             (f'%{search_t}%', f'%{search_t}%'))
     else:
         cur.execute("""SELECT t.*, d.name as dept_name FROM trainers t
-            LEFT JOIN departments d ON t.department_id=d.id ORDER BY t.name""")
+            LEFT JOIN departments d ON t.department_id=d.id ORDER BY t.name ASC""")
     trainers_list = cur.fetchall()
 
     # Fetch students
@@ -461,7 +461,7 @@ def credentials():
         conditions.append("s.class_id=%s"); params.append(filter_class)
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     cur.execute(f"""SELECT s.*, c.name as class_name FROM students s
-        LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.full_name""", params)
+        LEFT JOIN classes c ON s.class_id=c.id {where} ORDER BY s.admission_number ASC""", params)
     students_list = cur.fetchall()
 
     cur.execute("SELECT * FROM classes ORDER BY name")

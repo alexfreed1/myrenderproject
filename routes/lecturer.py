@@ -92,7 +92,7 @@ def dashboard():
             JOIN units u ON u.id=cu.unit_id
             WHERE cu.class_id=%s AND cu.trainer_id=%s""", (class_id, trainer['id']))
         units_list = cur.fetchall()
-        cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number", (class_id,))
+        cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number ASC", (class_id,))
         students_list = cur.fetchall()
     if unit_id and week and lesson:
         cur.execute("SELECT id FROM attendance WHERE unit_id=%s AND trainer_id=%s AND week=%s AND lesson=%s LIMIT 1", (unit_id, trainer['id'], week, lesson))
@@ -163,13 +163,13 @@ def view_attendance():
         cur.execute("""SELECT a.*, s.admission_number, s.full_name FROM attendance a
             JOIN students s ON s.id=a.student_id
             WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND a.trainer_id=%s
-            ORDER BY s.admission_number""", (unit_id, week, lesson, trainer['id']))
+            ORDER BY s.admission_number ASC""", (unit_id, week, lesson, trainer['id']))
         records = cur.fetchall()
         if cls:
             dept = {'name': cls['dept_name']}
         # Students not yet marked
         marked_ids = [r['student_id'] for r in records]
-        cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number", (class_id,))
+        cur.execute("SELECT * FROM students WHERE class_id=%s ORDER BY admission_number ASC", (class_id,))
         all_students = [s for s in cur.fetchall() if s['id'] not in marked_ids]
     return render_template('lecturer/view_attendance.html', trainer=trainer, cls=cls, unit=unit,
         dept=dept, records=records, all_students=all_students,
@@ -288,7 +288,7 @@ def trainee_search():
         cur.execute("""SELECT s.* FROM students s
             JOIN classes c ON s.class_id=c.id
             WHERE c.department_id=%s AND (s.admission_number ILIKE %s OR s.full_name ILIKE %s)
-            ORDER BY s.full_name""", (dept_id, f'%{query}%', f'%{query}%'))
+            ORDER BY s.full_name ASC""", (dept_id, f'%{query}%', f'%{query}%'))
         students = cur.fetchall()
 
     student_id = request.args.get('student_id', 0, type=int)
@@ -367,7 +367,7 @@ def download_attendance_pdf():
     cur.execute("""SELECT a.*, s.admission_number, s.full_name FROM attendance a
         JOIN students s ON s.id=a.student_id
         WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND a.trainer_id=%s
-        ORDER BY s.admission_number""", (unit_id, week, lesson, trainer['id']))
+        ORDER BY s.admission_number ASC""", (unit_id, week, lesson, trainer['id']))
     records = cur.fetchall()
     from datetime import datetime
     date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
