@@ -53,10 +53,24 @@ def welcome():
     cur.execute("SELECT COUNT(*) as c FROM classes");     classes_count = cur.fetchone()['c']
     cur.execute("SELECT COUNT(*) as c FROM students");    students_count = cur.fetchone()['c']
     cur.execute("SELECT COUNT(*) as c FROM units");       units_count = cur.fetchone()['c']
+    # Per-department breakdown
+    cur.execute("""
+        SELECT d.id, d.name,
+            COUNT(DISTINCT c.id) as class_count,
+            COUNT(DISTINCT s.id) as student_count,
+            COUNT(DISTINCT t.id) as trainer_count
+        FROM departments d
+        LEFT JOIN classes c ON c.department_id = d.id
+        LEFT JOIN students s ON s.class_id = c.id
+        LEFT JOIN trainers t ON t.department_id = d.id
+        GROUP BY d.id, d.name
+        ORDER BY d.name
+    """)
+    dept_stats = cur.fetchall()
     return render_template('admin/welcome.html',
         depts_count=depts_count, trainers_count=trainers_count,
         classes_count=classes_count, students_count=students_count,
-        units_count=units_count)
+        units_count=units_count, dept_stats=dept_stats)
 
 # ── Departments ───────────────────────────────────────────────────────────────
 
