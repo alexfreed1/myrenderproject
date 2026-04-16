@@ -136,7 +136,7 @@
                 <input type="checkbox" id="present_{{ s.id }}" class="checkbox-present" data-student-id="{{ s.id }}" onclick="toggleCheckbox({{ s.id }}, 'present')">
               </td>
               <td class="px-4 py-2 text-center">
-                <input type="checkbox" id="absent_{{ s.id }}" class="checkbox-absent" data-student-id="{{ s.id }}" onclick="toggleCheckbox({{ s.id }}, 'absent')">
+                <input type="checkbox" id="absent_{{ s.id }}" class="checkbox-absent" data-student-id="{{ s.id }}" onclick="toggleCheckbox({{ s.id }}, 'absent')" checked>
               </td>
             </tr>
             {% endfor %}
@@ -159,8 +159,19 @@
     function toggleCheckbox(id, type) {
       var p = document.getElementById('present_' + id);
       var a = document.getElementById('absent_' + id);
-      if (type === 'present') { if (p.checked) a.checked = false; }
-      else { if (a.checked) p.checked = false; }
+      if (type === 'present') {
+        if (p.checked) {
+          a.checked = false; // uncheck absent when present is ticked
+        } else {
+          a.checked = true;  // re-check absent if present is unticked
+        }
+      } else {
+        if (a.checked) {
+          p.checked = false; // uncheck present when absent is ticked
+        } else {
+          p.checked = true;  // re-check present if absent is unticked
+        }
+      }
     }
 
     function viewAttendance() {
@@ -195,8 +206,12 @@
       studentIds.forEach(function (sid) {
         var p = document.getElementById('present_' + sid);
         var a = document.getElementById('absent_' + sid);
-        if (p && p.checked) { form.append('status[' + sid + ']', 'present'); any = true; }
-        else if (a && a.checked) { form.append('status[' + sid + ']', 'absent'); any = true; }
+        // absent is default — record all students (present if ticked, absent otherwise)
+        if (p && p.checked) {
+          form.append('status[' + sid + ']', 'present'); any = true;
+        } else if (a && a.checked) {
+          form.append('status[' + sid + ']', 'absent'); any = true;
+        }
       });
       if (!any) { msg.textContent = 'No attendance recorded.'; msg.className = 'message error'; return; }
       spinner.style.display = 'block';
