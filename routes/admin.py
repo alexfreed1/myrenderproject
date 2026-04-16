@@ -89,12 +89,14 @@ def departments():
             else:
                 cur.execute("INSERT INTO departments (name) VALUES (%s)", (name,))
                 db.commit()
+                flash("Department added successfully.", "success")
                 return redirect(url_for('admin.departments'))
         else:
             error = "Department name cannot be empty."
     if request.args.get('delete'):
         cur.execute("DELETE FROM departments WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash("Department deleted.", "info")
         return redirect(url_for('admin.departments'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts = cur.fetchall()
@@ -118,6 +120,7 @@ def classes():
                 else:
                     cur.execute("INSERT INTO classes (name, department_id) VALUES (%s,%s)", (name, dept_id))
                     db.commit()
+                    flash('Class added successfully.', 'success')
                     return redirect(url_for('admin.classes'))
             else:
                 error = "Please fill in all fields."
@@ -142,6 +145,7 @@ def classes():
     if request.args.get('delete'):
         cur.execute("DELETE FROM classes WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash('Class deleted.', 'info')
         return redirect(url_for('admin.classes'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts_list = cur.fetchall()
@@ -172,6 +176,7 @@ def units():
                 else:
                     cur.execute("INSERT INTO units (code, name, department_id) VALUES (%s,%s,%s)", (code, name, dept_id or None))
                     db.commit()
+                    flash('Unit added successfully.', 'success')
                     return redirect(url_for('admin.units'))
             else:
                 error = "Code and Name are required."
@@ -194,6 +199,7 @@ def units():
     if request.args.get('delete'):
         cur.execute("DELETE FROM units WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash('Unit deleted.', 'info')
         return redirect(url_for('admin.units'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts_list = cur.fetchall()
@@ -218,6 +224,7 @@ def trainers():
             if name and username and password and dept_id:
                 cur.execute("INSERT INTO trainers (name, username, password, department_id) VALUES (%s,%s,%s,%s) ON CONFLICT (username) DO NOTHING", (name, username, password, dept_id))
                 db.commit()
+                flash('Trainer added successfully.', 'success')
                 return redirect(url_for('admin.trainers'))
         elif request.form.get('import_csv'):
             f = request.files.get('csv_file')
@@ -239,6 +246,7 @@ def trainers():
     if request.args.get('delete'):
         cur.execute("DELETE FROM trainers WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash('Trainer deleted.', 'info')
         return redirect(url_for('admin.trainers'))
     search = request.args.get('search', '').strip()
     imported = request.args.get('imported')
@@ -272,6 +280,7 @@ def students():
                 else:
                     cur.execute("INSERT INTO students (full_name, admission_number, class_id, password) VALUES (%s,%s,%s,'123456')", (name, adm, class_id))
                     db.commit()
+                    flash('Student added successfully.', 'success')
                     return redirect(url_for('admin.students'))
             else:
                 error = "All fields are required."
@@ -303,6 +312,7 @@ def students():
     if request.args.get('delete'):
         cur.execute("DELETE FROM students WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash('Student deleted.', 'info')
         return redirect(url_for('admin.students'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts_list = cur.fetchall()
@@ -350,6 +360,7 @@ def assign_units():
                     cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id, year, term) VALUES (%s,%s,%s,%s,%s)",
                                 (class_id, unit_id, trainer_id, year, term))
                     db.commit()
+                    flash('Assignment added successfully.', 'success')
                     return redirect(url_for('admin.assign_units'))
             else:
                 error = "Please select Class, Unit, and Trainer."
@@ -379,6 +390,7 @@ def assign_units():
     if request.args.get('delete'):
         cur.execute("DELETE FROM class_units WHERE id=%s", (int(request.args['delete']),))
         db.commit()
+        flash('Assignment removed.', 'info')
         return redirect(url_for('admin.assign_units'))
     cur.execute("SELECT * FROM departments ORDER BY name")
     depts_list = cur.fetchall()

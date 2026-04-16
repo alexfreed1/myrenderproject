@@ -6,6 +6,17 @@
   <title>{% block title %}Admin{% endblock %} | TTTTI</title>
   <link rel="stylesheet" href="/static/css/base.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: flex; align-items: center; gap: 10px;
+      transition: opacity 0.4s ease; min-width: 240px; max-width: 360px;
+    }
+    #toast.success { background: #2e7d32; color: #fff; }
+    #toast.info    { background: #1565c0; color: #fff; }
+    #toast.error   { background: #c62828; color: #fff; }
+  </style>
 </head>
 <body>
 <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
@@ -43,6 +54,15 @@
   </main>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+  <div id="toast" class="{{ category }}">
+    <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'info' %}info-circle{% else %}exclamation-circle{% endif %}"></i>
+    {{ message }}
+  </div>
+  {% endfor %}
+{% endwith %}
+
 <script>
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
@@ -61,6 +81,11 @@
       a.classList.add('active');
     }
   });
+  // Auto-dismiss toast
+  const toast = document.getElementById('toast');
+  if (toast) {
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 3500);
+  }
 </script>
 </body>
 </html>
