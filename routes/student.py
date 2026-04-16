@@ -7,6 +7,16 @@ student_bp = Blueprint('student', __name__)
 
 EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
+def validate_password(pwd):
+    """Min 8 chars, at least one digit, at least one symbol."""
+    if len(pwd) < 8:
+        return "Password must be at least 8 characters."
+    if not re.search(r'\d', pwd):
+        return "Password must contain at least one number."
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', pwd):
+        return "Password must contain at least one symbol (e.g. @, #, !)."
+    return None
+
 def student_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -57,17 +67,21 @@ def register():
         elif not EMAIL_RE.match(email):
             error = "Please enter a valid email address (e.g. name@example.com)."
         else:
-            cur.execute("SELECT id, email FROM students WHERE admission_number=%s", (adm,))
-            row = cur.fetchone()
-            if not row:
-                error = "Admission Number not found. Only students added by the Admin can register."
-            elif row['email']:
-                error = "Account already registered. Please login."
+            pwd_error = validate_password(pwd)
+            if pwd_error:
+                error = pwd_error
             else:
-                cur.execute("UPDATE students SET full_name=%s, email=%s, password=%s, class_id=%s WHERE id=%s",
-                            (fullname, email, pwd, class_id, row['id']))
-                db.commit()
-                return redirect(url_for('student.login') + '?registered=1')
+                cur.execute("SELECT id, email FROM students WHERE admission_number=%s", (adm,))
+                row = cur.fetchone()
+                if not row:
+                    error = "Admission Number not found. Only students added by the Admin can register."
+                elif row['email']:
+                    error = "Account already registered. Please login."
+                else:
+                    cur.execute("UPDATE students SET full_name=%s, email=%s, password=%s, class_id=%s WHERE id=%s",
+                                (fullname, email, pwd, class_id, row['id']))
+                    db.commit()
+                    return redirect(url_for('student.login') + '?registered=1')
     cur.execute("SELECT * FROM departments ORDER BY name")
     departments = cur.fetchall()
     if dept_id:

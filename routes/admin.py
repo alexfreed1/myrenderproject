@@ -465,9 +465,15 @@ def credentials():
             sid = request.form.get('student_id', 0, type=int)
             new_pass = request.form.get('password', '').strip()
             if sid and new_pass:
-                cur.execute("UPDATE students SET password=%s WHERE id=%s", (new_pass, sid))
-                db.commit()
-                success = "Student password updated."
+                from routes.student import validate_password
+                pwd_error = validate_password(new_pass)
+                if pwd_error:
+                    error = pwd_error
+                    tab = 'students'
+                else:
+                    cur.execute("UPDATE students SET password=%s WHERE id=%s", (new_pass, sid))
+                    db.commit()
+                    success = "Student password updated."
             else:
                 error = "Student ID and new password are required."
             tab = 'students'
