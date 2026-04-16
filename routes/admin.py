@@ -390,18 +390,18 @@ def assign_units():
     else:
         cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
-    # Always show ALL units in the New Assignment form
-    cur.execute("SELECT * FROM units ORDER BY code")
-    units = cur.fetchall()
-    # For the filter section, restrict units by department if selected
+    # Filter units by department_id when department is selected
     if filter_dept:
-        cur.execute("""SELECT DISTINCT u.* FROM units u
-            JOIN class_units cu ON cu.unit_id=u.id
-            JOIN classes c ON cu.class_id=c.id
-            WHERE c.department_id=%s ORDER BY u.code""", (filter_dept,))
-        filter_units = cur.fetchall()
+        cur.execute("SELECT * FROM units WHERE department_id=%s ORDER BY code", (filter_dept,))
+        units = cur.fetchall()
+        # Fallback: if no units have department_id set, show all units
+        if not units:
+            cur.execute("SELECT * FROM units ORDER BY code")
+            units = cur.fetchall()
     else:
-        filter_units = units
+        cur.execute("SELECT * FROM units ORDER BY code")
+        units = cur.fetchall()
+    filter_units = units
     if filter_dept:
         cur.execute("SELECT * FROM trainers WHERE department_id=%s ORDER BY name", (filter_dept,))
     else:
@@ -538,13 +538,14 @@ def view_attendance():
         cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
     if dept_id:
-        cur.execute("""SELECT DISTINCT u.* FROM units u
-            JOIN class_units cu ON cu.unit_id=u.id
-            JOIN classes c ON cu.class_id=c.id
-            WHERE c.department_id=%s ORDER BY u.code""", (dept_id,))
+        cur.execute("SELECT * FROM units WHERE department_id=%s ORDER BY code", (dept_id,))
+        units = cur.fetchall()
+        if not units:  # fallback if units don't have dept set
+            cur.execute("SELECT * FROM units ORDER BY code")
+            units = cur.fetchall()
     else:
         cur.execute("SELECT * FROM units ORDER BY code")
-    units = cur.fetchall()
+        units = cur.fetchall()
     attendance = []
     if class_id and unit_id and week and lesson:
         conditions = ["a.unit_id=%s", "a.week=%s", "a.lesson=%s", "s.class_id=%s"]
