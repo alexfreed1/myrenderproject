@@ -525,6 +525,53 @@ def credentials():
         students_list=students_list, classes_list=classes_list,
         search_t=search_t, search_s=search_s, filter_class=filter_class)
 
+# ── Class List ────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/class_list')
+@admin_required
+def class_list():
+    db = get_db(); cur = db.cursor()
+    dept_id  = request.args.get('dept_id',  0, type=int)
+    class_id = request.args.get('class_id', 0, type=int)
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    departments = cur.fetchall()
+    if dept_id:
+        cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (dept_id,))
+    else:
+        cur.execute("SELECT * FROM classes ORDER BY name")
+    classes = cur.fetchall()
+    students = []
+    cls = None
+    if class_id:
+        cur.execute("""SELECT s.admission_number, s.full_name
+            FROM students s WHERE s.class_id=%s
+            ORDER BY s.admission_number ASC""", (class_id,))
+        students = cur.fetchall()
+        cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
+        cls = cur.fetchone()
+    return render_template('admin/class_list.html',
+        departments=departments, classes=classes, students=students,
+        dept_id=dept_id, class_id=class_id, cls=cls)
+
+
+@admin_bp.route('/class_list_pdf')
+@admin_required
+def class_list_pdf():
+    db = get_db(); cur = db.cursor()
+    class_id = request.args.get('class_id', 0, type=int)
+    if not class_id:
+        return redirect('/admin/class_list')
+    cur.execute("""SELECT s.admission_number, s.full_name
+        FROM students s WHERE s.class_id=%s
+        ORDER BY s.admission_number ASC""", (class_id,))
+    students = cur.fetchall()
+    cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
+    cls = cur.fetchone()
+    from datetime import datetime
+    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    return render_template('admin/class_list_pdf.html', students=students, cls=cls, date_gen=date_gen)
+
+
 @admin_bp.route('/view_attendance')
 @admin_required
 def view_attendance():
