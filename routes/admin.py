@@ -390,14 +390,18 @@ def assign_units():
     else:
         cur.execute("SELECT * FROM classes ORDER BY name")
     classes = cur.fetchall()
+    # Always show ALL units in the New Assignment form
+    cur.execute("SELECT * FROM units ORDER BY code")
+    units = cur.fetchall()
+    # For the filter section, restrict units by department if selected
     if filter_dept:
         cur.execute("""SELECT DISTINCT u.* FROM units u
             JOIN class_units cu ON cu.unit_id=u.id
             JOIN classes c ON cu.class_id=c.id
             WHERE c.department_id=%s ORDER BY u.code""", (filter_dept,))
+        filter_units = cur.fetchall()
     else:
-        cur.execute("SELECT * FROM units ORDER BY code")
-    units = cur.fetchall()
+        filter_units = units
     if filter_dept:
         cur.execute("SELECT * FROM trainers WHERE department_id=%s ORDER BY name", (filter_dept,))
     else:
@@ -424,7 +428,7 @@ def assign_units():
         {where} ORDER BY cu.year DESC, cu.term, c.name, u.code""", params)
     assignments = cur.fetchall()
     return render_template('admin/assign_units.html', depts_list=depts_list, classes=classes,
-        units=units, trainers=trainers, assignments=assignments,
+        units=units, filter_units=filter_units, trainers=trainers, assignments=assignments,
         filter_dept=filter_dept, filter_class=filter_class, filter_trainer=filter_trainer,
         filter_year=filter_year, filter_term=filter_term, error=error, success=success)
 

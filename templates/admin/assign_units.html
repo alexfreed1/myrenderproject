@@ -5,6 +5,7 @@
 {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
 
+<!-- New Assignment Form -->
 <div class="section-card">
   <h3>New Assignment</h3>
   <p style="font-size:13px;color:#888;margin-bottom:12px;">Select a department to filter classes and trainers.</p>
@@ -60,6 +61,7 @@
   </form>
 </div>
 
+<!-- CSV Import -->
 <div class="section-card">
   <h3>Import Assignments (CSV)</h3>
   <form method="post" action="/admin/assign_units" enctype="multipart/form-data"
@@ -74,6 +76,7 @@
   </form>
 </div>
 
+<!-- Filter -->
 <div class="section-card" style="background:#f0f7ff;">
   <h3>Filter Assignments</h3>
   <form method="get" action="/admin/assign_units"
@@ -123,6 +126,7 @@
   </form>
 </div>
 
+<!-- Assignments Table -->
 <div class="section-card">
   <h3>Current Assignments</h3>
   <div class="table-wrap">
