@@ -218,7 +218,7 @@ def trainers():
             if name and username and password and dept_id:
                 cur.execute("INSERT INTO trainers (name, username, password, department_id) VALUES (%s,%s,%s,%s) ON CONFLICT (username) DO NOTHING", (name, username, password, dept_id))
                 db.commit()
-                success = "Trainer added successfully."
+                return redirect(url_for('admin.trainers'))
         elif request.form.get('import_csv'):
             f = request.files.get('csv_file')
             if f:
@@ -235,12 +235,15 @@ def trainers():
                             cur.execute("INSERT INTO trainers (name, username, password, department_id) VALUES (%s,%s,%s,%s) ON CONFLICT (username) DO NOTHING", (tname, uname, pwd, dept['id']))
                             count += 1
                 db.commit()
-                success = f"Imported {count} trainers successfully."
+                return redirect(url_for('admin.trainers') + '?imported=1')
     if request.args.get('delete'):
         cur.execute("DELETE FROM trainers WHERE id=%s", (int(request.args['delete']),))
         db.commit()
         return redirect(url_for('admin.trainers'))
     search = request.args.get('search', '').strip()
+    imported = request.args.get('imported')
+    if imported:
+        success = "Trainers imported successfully."
     if search:
         cur.execute("SELECT t.*, d.name as dept_name FROM trainers t LEFT JOIN departments d ON t.department_id=d.id WHERE t.name ILIKE %s OR t.username ILIKE %s OR d.name ILIKE %s ORDER BY t.name ASC", (f'%{search}%', f'%{search}%', f'%{search}%'))
     else:
