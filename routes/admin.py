@@ -859,7 +859,7 @@ def assessment_sheet():
             units = cur.fetchall()
     else:
         cur.execute("SELECT * FROM units ORDER BY code")
-    units = cur.fetchall()
+        units = cur.fetchall()
 
     eligible = []
     cls = unit = None
