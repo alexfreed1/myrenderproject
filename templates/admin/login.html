@@ -14,9 +14,19 @@
     <h2>Admin Login</h2>
     {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
     <form method="post">
-      <div class="form-group"><label>Username</label><input type="text" name="username" class="form-control" required autofocus></div>
-      <div class="form-group"><label>Password</label><input type="password" name="password" class="form-control" required></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;">Login</button>
+      <div class="auth-input-wrap">
+        <span class="auth-icon">&#128100;</span>
+        <input type="text" name="username" placeholder="Username" required autofocus>
+      </div>
+      <div class="auth-input-wrap">
+        <span class="auth-icon">&#128274;</span>
+        <input type="password" name="password" placeholder="Password" required>
+      </div>
+      <div class="auth-options">
+        <label><input type="checkbox" name="remember"> Remember me</label>
+        <a href="/forgot_password">Forgot Password?</a>
+      </div>
+      <button type="submit" class="btn-auth-login">Login</button>
     </form>
     <div class="auth-footer"><a href="/">← Back to Home</a></div>
   </div>
