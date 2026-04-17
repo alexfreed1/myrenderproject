@@ -827,3 +827,149 @@ def trainee_report_pdf():
         student=student, unit=unit, records=records,
         total=total, present=present, absent=absent, pct=pct,
         date_gen=date_gen, term_label=term_label)
+
+# ── Assessment Attendance Sheet ───────────────────────────────────────────────
+
+@admin_bp.route('/assessment_sheet')
+@admin_required
+def assessment_sheet():
+    db = get_db(); cur = db.cursor()
+
+    dept_id  = request.args.get('dept_id',  0, type=int)
+    class_id = request.args.get('class_id', 0, type=int)
+    unit_id  = request.args.get('unit_id',  0, type=int)
+    year     = request.args.get('year',  0, type=int)
+    term     = request.args.get('term',  0, type=int)
+    min_pct  = request.args.get('min_pct', 80, type=int)
+
+    cur.execute("SELECT * FROM departments ORDER BY name")
+    departments = cur.fetchall()
+
+    if dept_id:
+        cur.execute("SELECT * FROM classes WHERE department_id=%s ORDER BY name", (dept_id,))
+    else:
+        cur.execute("SELECT * FROM classes ORDER BY name")
+    classes = cur.fetchall()
+
+    if dept_id:
+        cur.execute("SELECT * FROM units WHERE department_id=%s ORDER BY code", (dept_id,))
+        units = cur.fetchall()
+        if not units:
+            cur.execute("SELECT * FROM units ORDER BY code")
+            units = cur.fetchall()
+    else:
+        cur.execute("SELECT * FROM units ORDER BY code")
+    units = cur.fetchall()
+
+    eligible = []
+    cls = unit = None
+
+    if class_id and unit_id:
+        cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
+        cls = cur.fetchone()
+        cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+        unit = cur.fetchone()
+
+        # Build attendance filter conditions
+        conditions = ["a.unit_id=%s", "s.class_id=%s"]
+        params = [unit_id, class_id]
+        if year:
+            conditions.append("a.year=%s"); params.append(year)
+        if term:
+            conditions.append("a.term=%s"); params.append(term)
+
+        cur.execute(f"""
+            SELECT s.id, s.admission_number, s.full_name,
+                COUNT(a.id) AS total,
+                SUM(CASE WHEN a.status='Present' THEN 1 ELSE 0 END) AS present
+            FROM students s
+            JOIN attendance a ON a.student_id=s.id
+            WHERE {' AND '.join(conditions)}
+            GROUP BY s.id, s.admission_number, s.full_name
+            ORDER BY s.admission_number ASC
+        """, params)
+        rows = cur.fetchall()
+
+        for r in rows:
+            total   = r['total']   or 0
+            present = r['present'] or 0
+            pct = round((present / total) * 100, 1) if total > 0 else 0
+            if pct >= min_pct:
+                eligible.append({
+                    'admission_number': r['admission_number'],
+                    'full_name':        r['full_name'],
+                    'present':          present,
+                    'total':            total,
+                    'pct':              pct,
+                })
+
+    TERM_LABELS = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}
+    term_label = TERM_LABELS.get(term, '') if term else 'All Terms'
+
+    return render_template('admin/assessment_sheet.html',
+        departments=departments, classes=classes, units=units,
+        dept_id=dept_id, class_id=class_id, unit_id=unit_id,
+        year=year, term=term, term_label=term_label, min_pct=min_pct,
+        eligible=eligible, cls=cls, unit=unit)
+
+
+@admin_bp.route('/assessment_sheet_pdf')
+@admin_required
+def assessment_sheet_pdf():
+    db = get_db(); cur = db.cursor()
+
+    class_id = request.args.get('class_id', 0, type=int)
+    unit_id  = request.args.get('unit_id',  0, type=int)
+    year     = request.args.get('year',  0, type=int)
+    term     = request.args.get('term',  0, type=int)
+    min_pct  = request.args.get('min_pct', 80, type=int)
+
+    if not (class_id and unit_id):
+        return 'Missing parameters.', 400
+
+    cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
+    cls = cur.fetchone()
+    cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+    unit = cur.fetchone()
+
+    conditions = ["a.unit_id=%s", "s.class_id=%s"]
+    params = [unit_id, class_id]
+    if year:
+        conditions.append("a.year=%s"); params.append(year)
+    if term:
+        conditions.append("a.term=%s"); params.append(term)
+
+    cur.execute(f"""
+        SELECT s.id, s.admission_number, s.full_name,
+            COUNT(a.id) AS total,
+            SUM(CASE WHEN a.status='Present' THEN 1 ELSE 0 END) AS present
+        FROM students s
+        JOIN attendance a ON a.student_id=s.id
+        WHERE {' AND '.join(conditions)}
+        GROUP BY s.id, s.admission_number, s.full_name
+        ORDER BY s.admission_number ASC
+    """, params)
+    rows = cur.fetchall()
+
+    eligible = []
+    for r in rows:
+        total   = r['total']   or 0
+        present = r['present'] or 0
+        pct = round((present / total) * 100, 1) if total > 0 else 0
+        if pct >= min_pct:
+            eligible.append({
+                'admission_number': r['admission_number'],
+                'full_name':        r['full_name'],
+                'present':          present,
+                'total':            total,
+                'pct':              pct,
+            })
+
+    TERM_LABELS = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}
+    term_label = TERM_LABELS.get(term, 'All Terms') if term else 'All Terms'
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
+
+    return render_template('admin/assessment_sheet_pdf.html',
+        cls=cls, unit=unit, eligible=eligible,
+        year=year, term=term, term_label=term_label,
+        min_pct=min_pct, date_gen=date_gen)
