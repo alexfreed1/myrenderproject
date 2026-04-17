@@ -6,72 +6,68 @@
   <title>Student Dashboard | TTTTI</title>
   <link rel="stylesheet" href="/static/css/base.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .navbar { background:linear-gradient(135deg,#1e5a9f,#2e75b6); color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-    .navbar-brand { display:flex; align-items:center; gap:12px; }
-    .navbar-brand img { height:44px; border-radius:50%; border:2px solid rgba(255,255,255,0.5); }
-    .navbar-brand h1 { font-size:clamp(13px,3vw,17px); margin:0; line-height:1.3; }
-    .navbar-brand p { font-size:12px; opacity:0.85; margin:0; }
-    .navbar-right { display:flex; align-items:center; gap:12px; font-size:13px; flex-wrap:wrap; }
-    .navbar-right a { background:rgba(255,255,255,0.2); color:#fff; padding:7px 14px; border-radius:6px; text-decoration:none; font-weight:600; transition:background 0.15s; }
-    .navbar-right a:hover { background:rgba(255,255,255,0.35); }
-    .dash-container { max-width:1100px; margin:24px auto; padding:0 16px; }
-    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
-    .stat-card { background:#fff; border-radius:12px; padding:20px; display:flex; align-items:center; gap:14px; box-shadow:0 2px 8px rgba(0,0,0,0.07); }
-    .stat-icon { width:52px; height:52px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; flex-shrink:0; }
-    .stat-info h3 { font-size:11px; color:#888; text-transform:uppercase; letter-spacing:0.5px; margin:0; }
-    .stat-info p { font-size:26px; font-weight:700; color:#333; margin:4px 0 0; }
-    .progress-bar { height:8px; background:#eee; border-radius:4px; overflow:hidden; flex:1; }
-    .progress-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
-    .high { background:linear-gradient(90deg,#2ecc71,#27ae60); }
-    .med  { background:linear-gradient(90deg,#f1c40f,#f39c12); }
-    .low  { background:linear-gradient(90deg,#e74c3c,#c0392b); }
-    .pct-high { color:#27ae60; font-weight:700; }
-    .pct-med  { color:#f39c12; font-weight:700; }
-    .pct-low  { color:#c0392b; font-weight:700; }
-    .unit-badge { background:#eef4fb; color:#1e5a9f; padding:3px 8px; border-radius:5px; font-size:12px; font-weight:700; }
-    @media(max-width:600px) {
-      .stat-info p { font-size:20px; }
-      table th, table td { font-size:12px; padding:8px; }
-    }
-  </style>
 </head>
 <body>
-<nav class="navbar">
-  <div class="navbar-brand">
+
+<!-- Top nav -->
+<nav class="topnav">
+  <div class="topnav-brand">
     <img src="{{ LOGO_URL }}" alt="Logo">
-    <div>
+    <div class="topnav-brand-text">
       <h1>THIKA TECHNICAL TRAINING INSTITUTE</h1>
       <p>Student Portal</p>
     </div>
   </div>
-  <div class="navbar-right">
-    <span>{{ student.full_name }} &bull; {{ student.admission_number }}</span>
-    <a href="/student/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <div class="topnav-right">
+    <span><i class="fas fa-user-graduate"></i> {{ student.full_name }} &bull; {{ student.admission_number }}</span>
+    <a href="/student/logout" class="topnav-btn danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 </nav>
 
-<div class="dash-container">
+<div class="dash-wrap">
+
+  <!-- Summary stats -->
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-icon" style="background:linear-gradient(135deg,#3498db,#2980b9);"><i class="fas fa-book"></i></div>
-      <div class="stat-info"><h3>Total Units</h3><p>{{ attendance_data | length }}</p></div>
+      <div class="stat-icon" style="background:linear-gradient(135deg,#3498db,#2980b9);">
+        <i class="fas fa-book"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Total Units</h3>
+        <p>{{ attendance_data | length }}</p>
+      </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:linear-gradient(135deg,#2ecc71,#27ae60);"><i class="fas fa-check-circle"></i></div>
-      <div class="stat-info"><h3>Classes Attended</h3><p>{{ total_attended }}</p></div>
+      <div class="stat-icon" style="background:linear-gradient(135deg,#2ecc71,#27ae60);">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Classes Attended</h3>
+        <p>{{ total_attended }}</p>
+      </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);"><i class="fas fa-chart-pie"></i></div>
-      <div class="stat-info"><h3>Avg Attendance</h3><p>{{ overall_pct }}%</p></div>
+      <div class="stat-icon" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+      <div class="stat-info">
+        <h3>Avg Attendance</h3>
+        <p class="{% if overall_pct >= 75 %}pct-high{% elif overall_pct >= 50 %}pct-med{% else %}pct-low{% endif %}">
+          {{ overall_pct }}%
+        </p>
+      </div>
     </div>
   </div>
 
+  <!-- Attendance table -->
   <div class="card">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <span><i class="fas fa-clipboard-list"></i> Attendance Dashboard</span>
-      <span style="background:#e3f2fd;color:#1e5a9f;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">{{ current_month }}</span>
+      <span style="background:#e3f2fd;color:var(--primary);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">
+        {{ current_month }}
+      </span>
     </div>
+
     {% if attendance_data %}
     <div class="table-wrap">
       <table>
@@ -83,7 +79,7 @@
             <th style="text-align:center;">Total</th>
             <th>Attendance %</th>
             <th>Last Update</th>
-            <th>Detail</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -97,28 +93,34 @@
             <td>{{ row.unit_name }}</td>
             <td style="text-align:center;font-weight:700;">{{ attended }}</td>
             <td style="text-align:center;color:#888;">{{ total }}</td>
-            <td>
-              <div style="display:flex;align-items:center;gap:10px;min-width:120px;">
-                <div class="progress-bar"><div class="progress-fill {{ sc }}" style="width:{{ pct }}%"></div></div>
-                <span class="pct-{{ sc }}" style="min-width:38px;">{{ pct }}%</span>
+            <td style="min-width:130px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-bar">
+                  <div class="progress-fill pf-{{ sc }}" style="width:{{ pct }}%;"></div>
+                </div>
+                <span class="pct-{{ sc }}" style="min-width:38px;font-size:13px;">{{ pct }}%</span>
               </div>
             </td>
-            <td style="font-size:12px;color:#888;">
-              {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}-{% endif %}
+            <td style="font-size:12px;color:#888;white-space:nowrap;">
+              {% if row.last_update %}{{ row.last_update.strftime('%d %b, %H:%M') }}{% else %}—{% endif %}
             </td>
-            <td><a href="/student/unit_detail?unit_id={{ row.id }}" class="btn btn-sm" style="background:#1e5a9f;color:#fff;font-size:12px;padding:5px 10px;">View</a></td>
+            <td>
+              <a href="/student/unit_detail?unit_id={{ row.id }}" class="btn btn-sm btn-primary"
+                 onclick="event.stopPropagation()">View</a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-    <div style="text-align:center;padding:40px;color:#aaa;">
-      <i class="fas fa-clipboard-list" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+    <div style="text-align:center;padding:48px 20px;color:#aaa;">
+      <i class="fas fa-clipboard-list" style="font-size:42px;margin-bottom:14px;display:block;opacity:0.35;"></i>
       No attendance records found yet.
     </div>
     {% endif %}
   </div>
-</div>
+
+</div><!-- /dash-wrap -->
 </body>
 </html>
