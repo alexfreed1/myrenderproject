@@ -2,6 +2,7 @@ import re
 from flask import Blueprint, render_template, request, session, redirect, url_for
 from db import get_db
 from functools import wraps
+from utils import now_eat
 
 student_bp = Blueprint('student', __name__)
 
@@ -116,8 +117,7 @@ def dashboard():
     total_attended = sum(r['attended'] or 0 for r in attendance_data)
     total_records = sum(r['total_records'] or 0 for r in attendance_data)
     overall_pct = round((total_attended / total_records) * 100, 1) if total_records > 0 else 0
-    from datetime import datetime
-    current_month = datetime.now().strftime('%B %Y')
+    current_month = now_eat().strftime('%B %Y')
     return render_template('student/dashboard.html', student=student, attendance_data=attendance_data, total_attended=total_attended, total_records=total_records, overall_pct=overall_pct, current_month=current_month)
 
 
@@ -171,8 +171,7 @@ def unit_report_pdf():
     present = sum(1 for r in records if r['status'] == 'Present')
     absent = total - present
     pct = round((present / total) * 100, 1) if total > 0 else 0
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     return render_template('student/unit_report_pdf.html', student=student, unit=unit,
         info=info, records=records, total=total, present=present,
         absent=absent, pct=pct, date_gen=date_gen)

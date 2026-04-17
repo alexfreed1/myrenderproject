@@ -16,8 +16,14 @@ def _connect():
     url = get_connection_url()
     # Internal Render hostnames don't need SSL
     if 'render.com' not in url:
-        return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
-    return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor, sslmode='require')
+        conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
+    else:
+        conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor, sslmode='require')
+    # Always use East Africa Time for this session
+    with conn.cursor() as cur:
+        cur.execute("SET TIME ZONE 'Africa/Nairobi'")
+    conn.commit()
+    return conn
 
 
 def get_db():

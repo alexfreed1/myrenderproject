@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify
 from db import get_db
 from functools import wraps
+from utils import now_eat, now_eat_naive
 
 lecturer_bp = Blueprint('lecturer', __name__)
 
@@ -142,12 +143,12 @@ def submit_attendance():
                         (student_id, unit_id, week, lesson, year, term))
             existing = cur.fetchone()
             if existing:
-                cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s",
-                            (status, trainer_id, existing['id']))
+                cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=%s WHERE id=%s",
+                            (status, trainer_id, now_eat_naive(), existing['id']))
             else:
                 cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, attendance_date)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())""",
-                    (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status))
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, now_eat_naive()))
         db.commit()
         return jsonify({'success': True, 'message': 'Attendance submitted successfully.'})
     except Exception as e:
@@ -206,8 +207,8 @@ def update_attendance():
     year = request.form.get('year', 2026)
     term = request.form.get('term', 1)
     if att_id and new_status in ('Present', 'Absent'):
-        cur.execute("UPDATE attendance SET status=%s, attendance_date=NOW() WHERE id=%s AND trainer_id=%s",
-                    (new_status, att_id, trainer_id))
+        cur.execute("UPDATE attendance SET status=%s, attendance_date=%s WHERE id=%s AND trainer_id=%s",
+                    (new_status, now_eat_naive(), att_id, trainer_id))
         db.commit()
     return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
@@ -235,12 +236,12 @@ def add_attendance():
                     (student_id, unit_id, week, lesson, year, term))
         existing = cur.fetchone()
         if existing:
-            cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=NOW() WHERE id=%s",
-                        (status, trainer_id, existing['id']))
+            cur.execute("UPDATE attendance SET status=%s, trainer_id=%s, attendance_date=%s WHERE id=%s",
+                        (status, trainer_id, now_eat_naive(), existing['id']))
         else:
             cur.execute("""INSERT INTO attendance (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, attendance_date)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())""",
-                (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status))
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (student_id, unit_id, unit_code, trainer_id, week, lesson, year, term, status, now_eat_naive()))
         db.commit()
     return redirect(f'/lecturer/view_attendance?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')
 
@@ -365,8 +366,7 @@ def trainee_report_pdf():
     present = sum(1 for r in records if r['status'] == 'Present')
     absent = total - present
     pct = round((present / total) * 100, 1) if total > 0 else 0
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     return render_template('lecturer/trainee_report_pdf.html',
         trainer=trainer, student=student, unit=unit, info=info,
         records=records, total=total, present=present, absent=absent,
@@ -392,7 +392,6 @@ def download_attendance_pdf():
         WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND a.trainer_id=%s
         ORDER BY s.admission_number ASC""", (unit_id, week, lesson, trainer['id']))
     records = cur.fetchall()
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     attendance_date = records[0]['attendance_date'].strftime('%d %b %Y') if records else '-'
     return render_template('lecturer/download_attendance_pdf.html', trainer=trainer, cls=cls, unit=unit, records=records, week=week, lesson=lesson, date_gen=date_gen, attendance_date=attendance_date)

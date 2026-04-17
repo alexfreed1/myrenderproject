@@ -2,6 +2,7 @@ import csv, io
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
 from db import get_db
 from functools import wraps
+from utils import now_eat
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -581,8 +582,7 @@ def class_list_pdf():
     students = cur.fetchall()
     cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
     cls = cur.fetchone()
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     return render_template('admin/class_list_pdf.html', students=students, cls=cls, date_gen=date_gen)
 
 
@@ -658,8 +658,7 @@ def download_attendance_pdf():
         cur.execute("SELECT name FROM trainers WHERE id=%s", (records[0]['trainer_id'],))
         t = cur.fetchone()
         if t: trainer_name = t['name']
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     attendance_date = records[0]['attendance_date'].strftime('%d %b %Y') if records else '-'
     return render_template('admin/download_attendance_pdf.html', cls=cls, unit=unit, records=records, week=week, lesson=lesson, trainer_name=trainer_name, date_gen=date_gen, attendance_date=attendance_date)
 
@@ -808,8 +807,7 @@ def trainee_report_pdf():
     present = sum(1 for r in records if r['status'] == 'Present')
     absent = total - present
     pct = round((present / total) * 100, 1) if total > 0 else 0
-    from datetime import datetime
-    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     return render_template('admin/trainee_report_pdf.html',
         student=student, unit=unit, records=records,
         total=total, present=present, absent=absent, pct=pct, date_gen=date_gen)
