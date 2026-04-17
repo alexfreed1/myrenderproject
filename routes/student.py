@@ -163,15 +163,16 @@ def unit_report_pdf():
         FROM students s JOIN classes c ON s.class_id=c.id
         JOIN departments d ON c.department_id=d.id WHERE s.id=%s""", (student_id,))
     info = cur.fetchone()
-    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date
+    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date, a.term, a.year
         FROM attendance a WHERE a.student_id=%s AND a.unit_id=%s
-        ORDER BY a.week, a.lesson""", (student_id, unit_id))
+        ORDER BY a.year, a.term, a.week, a.lesson""", (student_id, unit_id))
     records = cur.fetchall()
     total = len(records)
     present = sum(1 for r in records if r['status'] == 'Present')
     absent = total - present
     pct = round((present / total) * 100, 1) if total > 0 else 0
     date_gen = now_eat().strftime('%d %b %Y, %H:%M')
+    term_label = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}
     return render_template('student/unit_report_pdf.html', student=student, unit=unit,
         info=info, records=records, total=total, present=present,
-        absent=absent, pct=pct, date_gen=date_gen)
+        absent=absent, pct=pct, date_gen=date_gen, term_label=term_label)

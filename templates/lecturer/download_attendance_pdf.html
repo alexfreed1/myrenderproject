@@ -40,11 +40,14 @@
     <div class="info-bar">
       <div>
         {% if cls %}<div><strong>CLASS:</strong> {{ cls.name }}</div>{% endif %}
+        <div><strong>YEAR:</strong> {{ year }}</div>
+        <div><strong>TERM:</strong> {{ term_label }}</div>
         <div><strong>WEEK:</strong> {{ week }}</div>
         <div><strong>LESSON:</strong> {{ lesson }}</div>
       </div>
       <div>
         {% if unit %}<div><strong>UNIT:</strong> {{ unit.code }} - {{ unit.name }}</div>{% endif %}
+        <div><strong>TRAINER:</strong> {{ trainer.name }}</div>
         <div><strong>DATE:</strong> {{ attendance_date }}</div>
         <div><strong>DATE GENERATED:</strong> {{ date_gen }}</div>
       </div>

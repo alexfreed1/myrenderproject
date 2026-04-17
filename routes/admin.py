@@ -646,6 +646,8 @@ def download_attendance_pdf():
     unit_id = request.args.get('unit_id', 0, type=int)
     week = request.args.get('week', 0, type=int)
     lesson = request.args.get('lesson', '')
+    year = request.args.get('year', 0, type=int)
+    term = request.args.get('term', 0, type=int)
     if not (class_id and unit_id and week and lesson):
         return 'Missing parameters.', 400
     cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
@@ -664,7 +666,10 @@ def download_attendance_pdf():
         if t: trainer_name = t['name']
     date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     attendance_date = records[0]['attendance_date'].strftime('%d %b %Y') if records else '-'
-    return render_template('admin/download_attendance_pdf.html', cls=cls, unit=unit, records=records, week=week, lesson=lesson, trainer_name=trainer_name, date_gen=date_gen, attendance_date=attendance_date)
+    term_label = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}.get(term, f'Term {term}')
+    return render_template('admin/download_attendance_pdf.html', cls=cls, unit=unit, records=records,
+        week=week, lesson=lesson, year=year, term=term, term_label=term_label,
+        trainer_name=trainer_name, date_gen=date_gen, attendance_date=attendance_date)
 
 # ── Import Data ───────────────────────────────────────────────────────────────
 
@@ -812,6 +817,8 @@ def trainee_report_pdf():
     absent = total - present
     pct = round((present / total) * 100, 1) if total > 0 else 0
     date_gen = now_eat().strftime('%d %b %Y, %H:%M')
+    term_label = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}
     return render_template('admin/trainee_report_pdf.html',
         student=student, unit=unit, records=records,
-        total=total, present=present, absent=absent, pct=pct, date_gen=date_gen)
+        total=total, present=present, absent=absent, pct=pct,
+        date_gen=date_gen, term_label=term_label)

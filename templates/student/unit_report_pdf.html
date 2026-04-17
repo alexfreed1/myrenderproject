@@ -77,13 +77,15 @@
 
   <table>
     <thead>
-      <tr><th>#</th><th>Week</th><th>Lesson</th><th>Status</th><th>Date &amp; Time</th></tr>
+      <tr><th>#</th><th>Year</th><th>Term</th><th>Week</th><th>Lesson</th><th>Status</th><th>Date &amp; Time</th></tr>
     </thead>
     <tbody>
       {% if records %}
         {% for r in records %}
         <tr>
           <td>{{ loop.index }}</td>
+          <td>{{ r.year if r.year else '—' }}</td>
+          <td>{{ term_label.get(r.term, 'Term ' ~ r.term) if r.term else '—' }}</td>
           <td>Week {{ r.week }}</td>
           <td>{{ r.lesson }}</td>
           <td class="{{ r.status | lower }}">{{ r.status | upper }}</td>
@@ -91,7 +93,7 @@
         </tr>
         {% endfor %}
       {% else %}
-        <tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No records found.</td></tr>
+        <tr><td colspan="7" style="text-align:center;color:#999;padding:20px;">No records found.</td></tr>
       {% endif %}
     </tbody>
   </table>

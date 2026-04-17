@@ -370,7 +370,8 @@ def trainee_report_pdf():
     return render_template('lecturer/trainee_report_pdf.html',
         trainer=trainer, student=student, unit=unit, info=info,
         records=records, total=total, present=present, absent=absent,
-        pct=pct, date_gen=date_gen)
+        pct=pct, date_gen=date_gen,
+        term_label={1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'})
 
 @lecturer_bp.route('/download_attendance_pdf')
 @dept_required
@@ -381,6 +382,8 @@ def download_attendance_pdf():
     unit_id = request.args.get('unit_id', 0, type=int)
     week = request.args.get('week', 0, type=int)
     lesson = request.args.get('lesson', '')
+    year = request.args.get('year', 0, type=int)
+    term = request.args.get('term', 0, type=int)
     if not (class_id and unit_id and week and lesson):
         return 'Missing parameters.', 400
     cur.execute("SELECT c.*, d.name as dept_name FROM classes c JOIN departments d ON c.department_id=d.id WHERE c.id=%s", (class_id,))
@@ -394,4 +397,7 @@ def download_attendance_pdf():
     records = cur.fetchall()
     date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     attendance_date = records[0]['attendance_date'].strftime('%d %b %Y') if records else '-'
-    return render_template('lecturer/download_attendance_pdf.html', trainer=trainer, cls=cls, unit=unit, records=records, week=week, lesson=lesson, date_gen=date_gen, attendance_date=attendance_date)
+    term_label = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}.get(term, f'Term {term}')
+    return render_template('lecturer/download_attendance_pdf.html', trainer=trainer, cls=cls, unit=unit,
+        records=records, week=week, lesson=lesson, year=year, term=term, term_label=term_label,
+        date_gen=date_gen, attendance_date=attendance_date)
