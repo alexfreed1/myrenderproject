@@ -723,3 +723,93 @@ def import_data():
             if count == 0 and err_count > 0:
                 error = "No records were imported. Check your CSV format and ensure referenced data exists."
     return render_template('admin/import_data.html', message=message, error=error)
+
+# ── Trainee Attendance Search ─────────────────────────────────────────────────
+
+@admin_bp.route('/trainee_search')
+@admin_required
+def trainee_search():
+    db = get_db(); cur = db.cursor()
+    query = request.args.get('q', '').strip()
+    student_id = request.args.get('student_id', 0, type=int)
+    unit_id = request.args.get('unit_id', 0, type=int)
+    students = []
+    student = None
+    records = []
+    summary = {}
+
+    # All units (admin sees all)
+    cur.execute("SELECT id, code, name FROM units ORDER BY code")
+    units_list = cur.fetchall()
+
+    if query:
+        cur.execute("""SELECT s.*, c.name as class_name, d.name as dept_name
+            FROM students s
+            JOIN classes c ON s.class_id=c.id
+            JOIN departments d ON c.department_id=d.id
+            WHERE s.admission_number ILIKE %s OR s.full_name ILIKE %s
+            ORDER BY s.admission_number ASC""", (f'%{query}%', f'%{query}%'))
+        students = cur.fetchall()
+
+    if student_id and unit_id:
+        cur.execute("""SELECT s.*, c.name as class_name, d.name as dept_name
+            FROM students s
+            JOIN classes c ON s.class_id=c.id
+            JOIN departments d ON c.department_id=d.id
+            WHERE s.id=%s""", (student_id,))
+        student = cur.fetchone()
+        cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+        selected_unit = cur.fetchone()
+        cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date,
+                t.name as trainer_name
+            FROM attendance a
+            LEFT JOIN trainers t ON a.trainer_id=t.id
+            WHERE a.student_id=%s AND a.unit_id=%s
+            ORDER BY a.year, a.term, a.week, a.lesson""", (student_id, unit_id))
+        records = cur.fetchall()
+        total = len(records)
+        present = sum(1 for r in records if r['status'] == 'Present')
+        absent = total - present
+        pct = round((present / total) * 100, 1) if total > 0 else 0
+        summary = {'total': total, 'present': present, 'absent': absent, 'pct': pct, 'unit': selected_unit}
+
+    return render_template('admin/trainee_search.html',
+        query=query, students=students, student=student,
+        student_id=student_id, unit_id=unit_id,
+        units_list=units_list, records=records, summary=summary)
+
+
+# ── Trainee Attendance Report PDF (Admin) ─────────────────────────────────────
+
+@admin_bp.route('/trainee_report_pdf')
+@admin_required
+def trainee_report_pdf():
+    db = get_db(); cur = db.cursor()
+    student_id = request.args.get('student_id', 0, type=int)
+    unit_id = request.args.get('unit_id', 0, type=int)
+    if not (student_id and unit_id):
+        return 'Missing parameters.', 400
+    cur.execute("""SELECT s.*, c.name as class_name, d.name as dept_name
+        FROM students s
+        JOIN classes c ON s.class_id=c.id
+        JOIN departments d ON c.department_id=d.id
+        WHERE s.id=%s""", (student_id,))
+    student = cur.fetchone()
+    cur.execute("SELECT * FROM units WHERE id=%s", (unit_id,))
+    unit = cur.fetchone()
+    cur.execute("""SELECT a.week, a.lesson, a.status, a.attendance_date,
+            t.name as trainer_name
+        FROM attendance a
+        LEFT JOIN trainers t ON a.trainer_id=t.id
+        WHERE a.student_id=%s AND a.unit_id=%s
+        ORDER BY a.year, a.term, a.week, a.lesson""", (student_id, unit_id))
+    records = cur.fetchall()
+    total = len(records)
+    present = sum(1 for r in records if r['status'] == 'Present')
+    absent = total - present
+    pct = round((present / total) * 100, 1) if total > 0 else 0
+    from datetime import datetime
+    date_gen = datetime.now().strftime('%d %b %Y, %H:%M')
+    return render_template('admin/trainee_report_pdf.html',
+        student=student, unit=unit, records=records,
+        total=total, present=present, absent=absent, pct=pct, date_gen=date_gen)
