@@ -40,6 +40,8 @@ def login():
                 'username': row['username'],
                 'department_id': row['department_id']
             }
+            if request.form.get('remember'):
+                session.permanent = True
             return redirect(url_for('lecturer.select_department'))
         error = "Invalid username or password"
     return render_template('lecturer/login.html', error=error)

@@ -37,6 +37,8 @@ def login():
         if student:
             if pwd == student['password']:
                 session['student'] = dict(student)
+                if request.form.get('remember'):
+                    session.permanent = True
                 return redirect(url_for('student.dashboard'))
             else:
                 error = "Invalid password."

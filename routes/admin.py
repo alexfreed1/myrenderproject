@@ -26,6 +26,8 @@ def login():
         row = cur.fetchone()
         if row:
             session['admin'] = u
+            if request.form.get('remember'):
+                session.permanent = True
             return redirect(url_for('admin.dashboard'))
         error = 'Invalid credentials'
     return render_template('admin/login.html', error=error)
