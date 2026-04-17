@@ -659,6 +659,10 @@ def download_attendance_pdf():
         WHERE a.unit_id=%s AND a.week=%s AND a.lesson=%s AND s.class_id=%s
         ORDER BY s.admission_number""", (unit_id, week, lesson, class_id))
     records = cur.fetchall()
+    # Fall back to year/term from actual records if not passed in URL
+    if records:
+        if not year: year = records[0].get('year') or year
+        if not term: term = records[0].get('term') or term
     trainer_name = '_______________'
     if records and records[0].get('trainer_id'):
         cur.execute("SELECT name FROM trainers WHERE id=%s", (records[0]['trainer_id'],))
@@ -666,7 +670,8 @@ def download_attendance_pdf():
         if t: trainer_name = t['name']
     date_gen = now_eat().strftime('%d %b %Y, %H:%M')
     attendance_date = records[0]['attendance_date'].strftime('%d %b %Y') if records else '-'
-    term_label = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}.get(term, f'Term {term}')
+    TERM_LABELS = {1: 'Term 1 (Jan–Apr)', 2: 'Term 2 (May–Aug)', 3: 'Term 3 (Sep–Dec)'}
+    term_label = TERM_LABELS.get(term, f'Term {term}') if term else '—'
     return render_template('admin/download_attendance_pdf.html', cls=cls, unit=unit, records=records,
         week=week, lesson=lesson, year=year, term=term, term_label=term_label,
         trainer_name=trainer_name, date_gen=date_gen, attendance_date=attendance_date)
