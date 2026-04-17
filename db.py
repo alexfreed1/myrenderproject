@@ -95,8 +95,46 @@ def init_db():
         class_id INT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
         unit_id INT NOT NULL REFERENCES units(id) ON DELETE CASCADE,
         trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
-        UNIQUE(class_id, unit_id, trainer_id)
+        year INT NOT NULL DEFAULT 2026,
+        term INT NOT NULL DEFAULT 1,
+        UNIQUE(class_id, unit_id, trainer_id, year, term)
     )""")
+
+    # Migrate existing constraint if it's the old narrow one (missing year/term)
+    cur.execute("""
+        DO $$
+        BEGIN
+            -- Drop old constraint if it exists without year/term
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'class_units_class_id_unit_id_trainer_id_key'
+            ) THEN
+                ALTER TABLE class_units DROP CONSTRAINT class_units_class_id_unit_id_trainer_id_key;
+            END IF;
+            -- Add year/term columns if missing
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='class_units' AND column_name='year'
+            ) THEN
+                ALTER TABLE class_units ADD COLUMN year INT NOT NULL DEFAULT 2026;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='class_units' AND column_name='term'
+            ) THEN
+                ALTER TABLE class_units ADD COLUMN term INT NOT NULL DEFAULT 1;
+            END IF;
+            -- Add correct constraint if not already present
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'class_units_class_id_unit_id_trainer_id_year_term_key'
+            ) THEN
+                ALTER TABLE class_units
+                    ADD CONSTRAINT class_units_class_id_unit_id_trainer_id_year_term_key
+                    UNIQUE(class_id, unit_id, trainer_id, year, term);
+            END IF;
+        END$$;
+    """)
 
     cur.execute("""CREATE TABLE IF NOT EXISTS attendance (
         id SERIAL PRIMARY KEY,

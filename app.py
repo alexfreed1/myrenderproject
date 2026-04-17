@@ -14,8 +14,15 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-from db import close_db
+from db import close_db, init_db
 app.teardown_appcontext(close_db)
+
+# Run DB migrations on startup (safe to run repeatedly)
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"[init_db] warning: {e}")
 
 from routes.main import main_bp
 from routes.admin import admin_bp

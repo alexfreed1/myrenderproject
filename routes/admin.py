@@ -360,11 +360,15 @@ def assign_units():
                 if cur.fetchone():
                     error = "This assignment already exists for this term/year."
                 else:
-                    cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id, year, term) VALUES (%s,%s,%s,%s,%s)",
-                                (class_id, unit_id, trainer_id, year, term))
-                    db.commit()
-                    flash('Assignment added successfully.', 'success')
-                    return redirect(url_for('admin.assign_units'))
+                    try:
+                        cur.execute("INSERT INTO class_units (class_id, unit_id, trainer_id, year, term) VALUES (%s,%s,%s,%s,%s)",
+                                    (class_id, unit_id, trainer_id, year, term))
+                        db.commit()
+                        flash('Assignment added successfully.', 'success')
+                        return redirect(url_for('admin.assign_units'))
+                    except Exception:
+                        db.rollback()
+                        error = "This assignment already exists for this term/year."
             else:
                 error = "Please select Class, Unit, and Trainer."
         elif request.form.get('import_csv'):
