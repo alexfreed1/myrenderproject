@@ -14,12 +14,10 @@ def get_connection_url():
 
 def _connect():
     url = get_connection_url()
-    # Internal Render hostnames don't need SSL
     if 'render.com' not in url:
         conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
     else:
         conn = psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor, sslmode='require')
-    # Always use East Africa Time for this session
     with conn.cursor() as cur:
         cur.execute("SET TIME ZONE 'Africa/Nairobi'")
     conn.commit()
@@ -100,18 +98,16 @@ def init_db():
         UNIQUE(class_id, unit_id, trainer_id, year, term)
     )""")
 
-    # Migrate existing constraint if it's the old narrow one (missing year/term)
+    # Migrate class_units: drop old narrow constraint, add year/term columns if missing
     cur.execute("""
         DO $$
         BEGIN
-            -- Drop old constraint if it exists without year/term
             IF EXISTS (
                 SELECT 1 FROM pg_constraint
                 WHERE conname = 'class_units_class_id_unit_id_trainer_id_key'
             ) THEN
                 ALTER TABLE class_units DROP CONSTRAINT class_units_class_id_unit_id_trainer_id_key;
             END IF;
-            -- Add year/term columns if missing
             IF NOT EXISTS (
                 SELECT 1 FROM information_schema.columns
                 WHERE table_name='class_units' AND column_name='year'
@@ -124,7 +120,6 @@ def init_db():
             ) THEN
                 ALTER TABLE class_units ADD COLUMN term INT NOT NULL DEFAULT 1;
             END IF;
-            -- Add correct constraint if not already present
             IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint
                 WHERE conname = 'class_units_class_id_unit_id_trainer_id_year_term_key'
@@ -150,10 +145,18 @@ def init_db():
         attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL
+    )""")
+
+    # class_events: holiday / academic trip markers per session
+    # unit_id uses 0 as sentinel (not NULL) so UNIQUE constraint works reliably
     cur.execute("""CREATE TABLE IF NOT EXISTS class_events (
         id SERIAL PRIMARY KEY,
         class_id INT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-        unit_id INT REFERENCES units(id) ON DELETE CASCADE,
+        unit_id INT NOT NULL DEFAULT 0,
         trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
         event_type VARCHAR(30) NOT NULL,
         week INT NOT NULL,
@@ -165,38 +168,25 @@ def init_db():
         UNIQUE(class_id, unit_id, trainer_id, week, lesson, year, term)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS admins (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(100) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL
-    )""")
+    # Migrate class_events if it exists with nullable unit_id
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='class_events' AND column_name='unit_id'
+                  AND is_nullable='YES'
+            ) THEN
+                UPDATE class_events SET unit_id=0 WHERE unit_id IS NULL;
+                ALTER TABLE class_events ALTER COLUMN unit_id SET NOT NULL;
+                ALTER TABLE class_events ALTER COLUMN unit_id SET DEFAULT 0;
+            END IF;
+        END$$;
+    """)
 
     cur.execute("SELECT id FROM admins WHERE username='admin'")
     if not cur.fetchone():
         cur.execute("INSERT INTO admins (username, password) VALUES ('admin', 'admin123')")
-
-    # Migrate: create class_events if missing
-    cur.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='class_events') THEN
-                CREATE TABLE class_events (
-                    id SERIAL PRIMARY KEY,
-                    class_id INT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-                    unit_id INT REFERENCES units(id) ON DELETE CASCADE,
-                    trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
-                    event_type VARCHAR(30) NOT NULL,
-                    week INT NOT NULL,
-                    lesson VARCHAR(10) NOT NULL,
-                    year INT NOT NULL DEFAULT 2026,
-                    term INT NOT NULL DEFAULT 1,
-                    note TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(class_id, unit_id, trainer_id, week, lesson, year, term)
-                );
-            END IF;
-        END$$;
-    """)
 
     conn.commit()
     cur.close()

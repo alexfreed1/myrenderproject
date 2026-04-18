@@ -446,7 +446,7 @@ def mark_event():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (class_id, unit_id, trainer_id, week, lesson, year, term)
             DO UPDATE SET event_type=%s, note=%s, created_at=%s
-        """, (class_id, unit_id or None, trainer_id, event_type, week, lesson, year, term,
+        """, (class_id, unit_id if unit_id else 0, trainer_id, event_type, week, lesson, year, term,
               note, now_eat_naive(),
               event_type, note, now_eat_naive()))
         db.commit()
