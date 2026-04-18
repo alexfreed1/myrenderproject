@@ -150,6 +150,21 @@ def init_db():
         attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS class_events (
+        id SERIAL PRIMARY KEY,
+        class_id INT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+        unit_id INT REFERENCES units(id) ON DELETE CASCADE,
+        trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+        event_type VARCHAR(30) NOT NULL,
+        week INT NOT NULL,
+        lesson VARCHAR(10) NOT NULL,
+        year INT NOT NULL DEFAULT 2026,
+        term INT NOT NULL DEFAULT 1,
+        note TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(class_id, unit_id, trainer_id, week, lesson, year, term)
+    )""")
+
     cur.execute("""CREATE TABLE IF NOT EXISTS admins (
         id SERIAL PRIMARY KEY,
         username VARCHAR(100) NOT NULL UNIQUE,
@@ -159,6 +174,29 @@ def init_db():
     cur.execute("SELECT id FROM admins WHERE username='admin'")
     if not cur.fetchone():
         cur.execute("INSERT INTO admins (username, password) VALUES ('admin', 'admin123')")
+
+    # Migrate: create class_events if missing
+    cur.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='class_events') THEN
+                CREATE TABLE class_events (
+                    id SERIAL PRIMARY KEY,
+                    class_id INT NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+                    unit_id INT REFERENCES units(id) ON DELETE CASCADE,
+                    trainer_id INT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+                    event_type VARCHAR(30) NOT NULL,
+                    week INT NOT NULL,
+                    lesson VARCHAR(10) NOT NULL,
+                    year INT NOT NULL DEFAULT 2026,
+                    term INT NOT NULL DEFAULT 1,
+                    note TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(class_id, unit_id, trainer_id, week, lesson, year, term)
+                );
+            END IF;
+        END$$;
+    """)
 
     conn.commit()
     cur.close()

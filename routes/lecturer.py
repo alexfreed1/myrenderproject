@@ -103,10 +103,18 @@ def dashboard():
         cur.execute("SELECT id FROM attendance WHERE unit_id=%s AND trainer_id=%s AND week=%s AND lesson=%s AND year=%s AND term=%s LIMIT 1",
                     (unit_id, trainer['id'], week, lesson, year, term))
         attendance_submitted = cur.fetchone() is not None
+    # Check for existing event on this session
+    active_event = None
+    if class_id and week and lesson:
+        cur.execute("""SELECT * FROM class_events
+            WHERE class_id=%s AND trainer_id=%s AND week=%s AND lesson=%s AND year=%s AND term=%s
+            LIMIT 1""", (class_id, trainer['id'], week, lesson, year, term))
+        active_event = cur.fetchone()
     return render_template('lecturer/dashboard.html', trainer=trainer, dept_name=dept_name,
         class_list=class_list, units_list=units_list, students_list=students_list,
         class_id=class_id, unit_id=unit_id, week=week, lesson=lesson,
-        year=year, term=term, attendance_submitted=attendance_submitted)
+        year=year, term=term, attendance_submitted=attendance_submitted,
+        active_event=active_event)
 
 # ── Submit Attendance ─────────────────────────────────────────────────────────
 
@@ -406,3 +414,62 @@ def download_attendance_pdf():
     return render_template('lecturer/download_attendance_pdf.html', trainer=trainer, cls=cls, unit=unit,
         records=records, week=week, lesson=lesson, year=year, term=term, term_label=term_label,
         date_gen=date_gen, attendance_date=attendance_date)
+
+
+# ── Mark Class Event (Holiday / Academic Trip) ────────────────────────────────
+
+@lecturer_bp.route('/mark_event', methods=['POST'])
+@trainer_required
+def mark_event():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    class_id   = request.form.get('class_id',  0, type=int)
+    unit_id    = request.form.get('unit_id',   0, type=int)
+    week       = request.form.get('week',      0, type=int)
+    lesson     = request.form.get('lesson',    '')
+    year       = request.form.get('year',   2026, type=int)
+    term       = request.form.get('term',      1, type=int)
+    event_type = request.form.get('event_type', '')
+    note       = request.form.get('note', '').strip()
+
+    if not (class_id and week and lesson and event_type):
+        return jsonify({'success': False, 'message': 'Missing required fields.'})
+
+    valid_types = ('holiday', 'academic_trip')
+    if event_type not in valid_types:
+        return jsonify({'success': False, 'message': 'Invalid event type.'})
+
+    try:
+        cur.execute("""
+            INSERT INTO class_events
+                (class_id, unit_id, trainer_id, event_type, week, lesson, year, term, note, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (class_id, unit_id, trainer_id, week, lesson, year, term)
+            DO UPDATE SET event_type=%s, note=%s, created_at=%s
+        """, (class_id, unit_id or None, trainer_id, event_type, week, lesson, year, term,
+              note, now_eat_naive(),
+              event_type, note, now_eat_naive()))
+        db.commit()
+        label = 'Holiday' if event_type == 'holiday' else 'Academic Trip'
+        return jsonify({'success': True, 'message': f'{label} recorded for Week {week} {lesson}.'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
+
+@lecturer_bp.route('/delete_event', methods=['POST'])
+@trainer_required
+def delete_event():
+    trainer_id = session['trainer']['id']
+    db = get_db(); cur = db.cursor()
+    event_id = request.form.get('event_id', 0, type=int)
+    class_id = request.form.get('class_id', 0)
+    unit_id  = request.form.get('unit_id',  0)
+    week     = request.form.get('week',     0)
+    lesson   = request.form.get('lesson',   '')
+    year     = request.form.get('year',  2026)
+    term     = request.form.get('term',     1)
+    if event_id:
+        cur.execute("DELETE FROM class_events WHERE id=%s AND trainer_id=%s", (event_id, trainer_id))
+        db.commit()
+    return redirect(f'/lecturer/dashboard?class_id={class_id}&unit_id={unit_id}&week={week}&lesson={lesson}&year={year}&term={term}')

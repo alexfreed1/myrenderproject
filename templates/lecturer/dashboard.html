@@ -21,6 +21,19 @@
     .att-table tbody tr:hover { background:#f5f8ff; }
     .att-table td.center { text-align:center; }
     .action-bar { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; padding:16px 0 4px; }
+    /* Event banner */
+    .event-banner { border-radius:8px; padding:12px 18px; margin:0 0 0; font-size:14px; font-weight:600; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .event-banner.holiday       { background:#fff8e1; color:#f57f17; border-left:4px solid #f9a825; }
+    .event-banner.academic_trip { background:#e8f5e9; color:#2e7d32; border-left:4px solid #43a047; }
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:28px 28px 22px; width:100%; max-width:420px; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+    .modal-box h3 { font-size:17px; margin-bottom:16px; color:var(--primary); }
+    .modal-box label { font-size:13px; font-weight:600; display:block; margin-bottom:5px; color:#444; }
+    .modal-box textarea { width:100%; padding:9px 12px; border:1px solid #ccc; border-radius:6px; font-size:14px; resize:vertical; min-height:80px; }
+    .modal-box textarea:focus { outline:none; border-color:var(--primary); }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
   </style>
 </head>
 <body>
@@ -118,6 +131,30 @@
 
     <div id="attMsg" class="att-msg"></div>
 
+    {% if active_event %}
+    <div class="event-banner {{ active_event.event_type }}" style="margin:0 0 4px;">
+      <span>
+        <i class="fas fa-{% if active_event.event_type == 'holiday' %}umbrella-beach{% else %}bus{% endif %}"></i>
+        &nbsp;
+        <strong>{% if active_event.event_type == 'holiday' %}Holiday{% else %}Academic Trip{% endif %}</strong>
+        recorded for Week {{ active_event.week }} {{ active_event.lesson }}
+        {% if active_event.note %} &mdash; {{ active_event.note }}{% endif %}
+      </span>
+      <form method="post" action="/lecturer/delete_event" style="display:inline;" onsubmit="return confirm('Remove this event record?');">
+        <input type="hidden" name="event_id" value="{{ active_event.id }}">
+        <input type="hidden" name="class_id" value="{{ class_id }}">
+        <input type="hidden" name="unit_id"  value="{{ unit_id }}">
+        <input type="hidden" name="week"     value="{{ active_event.week }}">
+        <input type="hidden" name="lesson"   value="{{ active_event.lesson }}">
+        <input type="hidden" name="year"     value="{{ year }}">
+        <input type="hidden" name="term"     value="{{ term }}">
+        <button type="submit" class="btn btn-sm" style="background:rgba(0,0,0,0.12);color:inherit;padding:4px 10px;">
+          <i class="fas fa-times"></i> Remove
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
     {% if not students_list %}
     <div style="text-align:center;padding:40px;color:#aaa;">
       <i class="fas fa-users" style="font-size:36px;margin-bottom:12px;display:block;opacity:0.4;"></i>
@@ -165,11 +202,41 @@
         <i class="fas fa-{% if attendance_submitted %}check{% else %}paper-plane{% endif %}"></i>
         {% if attendance_submitted %}Already Submitted{% else %}Submit Attendance{% endif %}
       </button>
+      <button type="button" class="btn" style="background:#f9a825;color:#fff;" onclick="openEventModal('holiday')">
+        <i class="fas fa-umbrella-beach"></i> Mark Holiday
+      </button>
+      <button type="button" class="btn" style="background:#43a047;color:#fff;" onclick="openEventModal('academic_trip')">
+        <i class="fas fa-bus"></i> Mark Academic Trip
+      </button>
       <div id="loadingSpinner" class="loading-spinner"></div>
     </div>
   </div>
 
 </div><!-- /dash-wrap -->
+
+<!-- Event Modal -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal-box">
+    <h3 id="modalTitle"><i class="fas fa-umbrella-beach"></i> Mark Holiday</h3>
+    <form id="eventForm">
+      <input type="hidden" id="evEventType" name="event_type" value="holiday">
+      <input type="hidden" id="evClassId"   name="class_id"   value="">
+      <input type="hidden" id="evUnitId"    name="unit_id"    value="">
+      <input type="hidden" id="evWeek"      name="week"       value="">
+      <input type="hidden" id="evLesson"    name="lesson"     value="">
+      <input type="hidden" id="evYear"      name="year"       value="">
+      <input type="hidden" id="evTerm"      name="term"       value="">
+      <div style="margin-bottom:14px;">
+        <label>Note <span style="font-weight:400;color:#888;">(optional)</span></label>
+        <textarea id="evNote" name="note" placeholder="e.g. Mid-term holiday, Science museum trip..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" style="background:#eee;color:#333;" onclick="closeEventModal()">Cancel</button>
+        <button type="submit" id="evSubmitBtn" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
   var studentIds = [{% for s in students_list %}{{ s.id }}{% if not loop.last %},{% endif %}{% endfor %}];
@@ -177,11 +244,8 @@
   function toggleCheckbox(id, type) {
     var p = document.getElementById('present_' + id);
     var a = document.getElementById('absent_' + id);
-    if (type === 'present') {
-      a.checked = !p.checked;
-    } else {
-      p.checked = !a.checked;
-    }
+    if (type === 'present') { a.checked = !p.checked; }
+    else { p.checked = !a.checked; }
   }
 
   function viewAttendance() {
@@ -196,6 +260,57 @@
       '&term=' + document.getElementById('termSelect').value;
   }
 
+  // ── Event modal ──────────────────────────────────────────────────────────
+  function openEventModal(type) {
+    var c = document.getElementById('classSelect').value;
+    var w = document.getElementById('weekSelect').value;
+    var l = document.getElementById('lessonSelect').value;
+    if (!c || !w || !l) { alert('Please select Class, Week and Lesson first.'); return; }
+    document.getElementById('evEventType').value = type;
+    document.getElementById('evClassId').value   = c;
+    document.getElementById('evUnitId').value    = document.getElementById('unitSelect').value;
+    document.getElementById('evWeek').value      = w;
+    document.getElementById('evLesson').value    = l;
+    document.getElementById('evYear').value      = document.getElementById('yearSelect').value;
+    document.getElementById('evTerm').value      = document.getElementById('termSelect').value;
+    document.getElementById('evNote').value      = '';
+    var isHoliday = type === 'holiday';
+    document.getElementById('modalTitle').innerHTML =
+      '<i class="fas fa-' + (isHoliday ? 'umbrella-beach' : 'bus') + '"></i> ' +
+      (isHoliday ? 'Mark Holiday' : 'Mark Academic Trip');
+    document.getElementById('evSubmitBtn').style.background = isHoliday ? '#f9a825' : '#43a047';
+    document.getElementById('eventModal').classList.add('open');
+  }
+
+  function closeEventModal() {
+    document.getElementById('eventModal').classList.remove('open');
+  }
+
+  document.getElementById('eventModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEventModal();
+  });
+
+  document.getElementById('eventForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = new FormData(this);
+    var btn = document.getElementById('evSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    fetch('/lecturer/mark_event', { method: 'POST', body: form })
+      .then(r => r.json())
+      .then(resp => {
+        btn.disabled = false; btn.textContent = 'Save';
+        closeEventModal();
+        if (resp.success) {
+          // Reload to show the event banner
+          window.location.reload();
+        } else {
+          alert(resp.message || 'Error saving event.');
+        }
+      })
+      .catch(() => { btn.disabled = false; btn.textContent = 'Save'; alert('Network error.'); });
+  });
+
+  // ── Submit attendance ────────────────────────────────────────────────────
   document.getElementById('submitBtn').addEventListener('click', function () {
     var classId  = document.getElementById('classSelect').value;
     var unitId   = document.getElementById('unitSelect').value;
